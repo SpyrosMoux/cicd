@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+	"os"
 	"spyrosmoux/api/internal/queue"
 )
 
@@ -20,7 +21,8 @@ func HandleWebhook(c *gin.Context) {
 	}
 
 	// Publish the raw YAML body as a job
-	queue.PublishJob(string(body))
+	file, _ := os.ReadFile("sample-pipeline.yaml")
+	queue.PublishJob(string(file))
 
 	c.Status(http.StatusAccepted)
 }
