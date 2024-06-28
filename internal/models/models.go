@@ -11,18 +11,18 @@ type JobModel struct {
 // GhPushWebhook struct is the object returned
 // by GitHub's Push Webhook
 type GhPushWebhook struct {
-	After      string     `json:"after"`
-	BaseRef    string     `json:"base_ref"`
-	Before     string     `json:"before"`
-	Commits    []Commits  `json:"commits"`
-	Compare    string     `json:"compare"`
-	Created    bool       `json:"created"`
-	Deleted    bool       `json:"deleted"`
-	Forced     bool       `json:"forced"`
-	HeadCommit HeadCommit `json:"head_commit"`
-	Pusher     Pusher     `json:"pusher"`
-	Ref        string     `json:"ref"`
-	Repository string     `json:"repository"`
+	After      string      `json:"after"`
+	BaseRef    string      `json:"base_ref"`
+	Before     string      `json:"before"`
+	Commits    []Commits   `json:"commits"`
+	Compare    string      `json:"compare"`
+	Created    bool        `json:"created"`
+	Deleted    bool        `json:"deleted"`
+	Forced     bool        `json:"forced"`
+	HeadCommit HeadCommit  `json:"head_commit"`
+	Pusher     Pusher      `json:"pusher"`
+	Ref        string      `json:"ref"`
+	Repository interface{} `json:"repository"`
 }
 
 type Commits struct {
