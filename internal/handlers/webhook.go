@@ -21,7 +21,7 @@ func HandleWebhook(c *gin.Context) {
 	}
 
 	// Publish the raw YAML body as a job
-	file, _ := os.ReadFile("sample-pipeline.yaml")
+	file, _ := os.ReadFile("sample-pipeline.yaml") // TODO use body instead
 	queue.PublishJob(string(file))
 
 	c.Status(http.StatusAccepted)

@@ -1,11 +1,10 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"os"
-	"spyrosmoux/api/internal/handlers"
 	"spyrosmoux/api/internal/queue"
+	"spyrosmoux/api/internal/routers"
 
 	"github.com/joho/godotenv"
 )
@@ -35,13 +34,11 @@ func getEnvOrExit(key string) string {
 }
 
 func main() {
-	router := gin.Default()
-
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()
 
 	// Setup routes
-	router.POST("/webhook", handlers.HandleWebhook)
+	router := routers.SetupRouter()
 
 	log.Printf("Starting server on port %s", apiPort)
 	log.Fatal(router.Run(":" + apiPort))
