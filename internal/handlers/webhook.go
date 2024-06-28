@@ -30,7 +30,9 @@ func HandleWebhook(c *gin.Context) {
 		log.Panicf("Error unmarshalling body: %v", err)
 	}
 
-	log.Println(result)
+	log.Println(result.Repository)
+
+	//git.PlainClone(result.Repository)
 
 	// Publish the raw YAML body as a job
 	// file, _ := os.ReadFile("sample-pipeline.yaml") // TODO use body instead
