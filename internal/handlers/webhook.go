@@ -39,7 +39,7 @@ func fetchPipelineConfig(repoFullName, branchName string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+GhSecret)
+	req.Header.Set("Authorization", "Bearer "+GhToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
