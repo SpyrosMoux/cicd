@@ -11,6 +11,7 @@ import (
 )
 
 var GhSecret = helpers.LoadEnvVariable("GH_SECRET")
+var GhToken = helpers.LoadEnvVariable("GH_TOKEN")
 
 func HandleWebhook(c *gin.Context) {
 	hook, _ := github.New(github.Options.Secret(GhSecret))
