@@ -17,5 +17,6 @@ func HandleWebhook(c *gin.Context) {
 		log.Panicf("Error parsing webhook payload: %v", err)
 	}
 
-	log.Printf("Received webhook payload: %+v", payload)
+	push := payload.(github.PushPayload)
+	log.Printf(push.Repository.CloneURL)
 }
