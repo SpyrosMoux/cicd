@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
@@ -23,7 +22,7 @@ func HandleWebhook(c *gin.Context) {
 	}
 
 	var result map[string]interface{}
-	err = json.Unmarshal(body, &result)
+	err = c.ShouldBindJSON(&result)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Panicf("Error unmarshalling body: %v", err)
