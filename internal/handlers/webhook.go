@@ -9,7 +9,7 @@ import (
 func HandleWebhook(c *gin.Context) {
 	hook, _ := github.New(github.Options.Secret("MyGitHubSuperSecretSecret...?"))
 
-	payload, err := hook.Parse(c.Request, github.ReleaseEvent, github.PullRequestEvent)
+	payload, err := hook.Parse(c.Request, github.PushEvent)
 	if err != nil {
 		log.Panicf("Error parsing webhook payload: %v", err)
 	}
