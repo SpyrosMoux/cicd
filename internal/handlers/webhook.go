@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"spyrosmoux/api/internal/helpers"
+	"spyrosmoux/api/internal/queue"
 )
 
 var GhSecret = helpers.LoadEnvVariable("GH_SECRET")
@@ -28,7 +29,7 @@ func HandleWebhook(c *gin.Context) {
 		log.Panicf("Error fetching pipeline config: %v", err)
 	}
 
-	log.Printf("Received pipeline config: %+v", pipeline)
+	queue.PublishJob(string(pipeline))
 }
 
 func fetchPipelineConfig(repoFullName, branchName string) ([]byte, error) {
