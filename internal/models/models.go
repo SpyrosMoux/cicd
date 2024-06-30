@@ -11,18 +11,18 @@ type JobModel struct {
 // GhPushWebhook struct is the object returned
 // by GitHub's Push Webhook
 type GhPushWebhook struct {
-	After      string      `json:"after"`
-	BaseRef    string      `json:"base_ref"`
-	Before     string      `json:"before"`
-	Commits    []Commits   `json:"commits"`
-	Compare    string      `json:"compare"`
-	Created    bool        `json:"created"`
-	Deleted    bool        `json:"deleted"`
-	Forced     bool        `json:"forced"`
-	HeadCommit HeadCommit  `json:"head_commit"`
-	Pusher     Pusher      `json:"pusher"`
-	Ref        string      `json:"ref"`
-	Repository interface{} `json:"repository"`
+	After      string     `json:"after"`
+	BaseRef    string     `json:"base_ref"`
+	Before     string     `json:"before"`
+	Commits    []Commits  `json:"commits"`
+	Compare    string     `json:"compare"`
+	Created    bool       `json:"created"`
+	Deleted    bool       `json:"deleted"`
+	Forced     bool       `json:"forced"`
+	HeadCommit HeadCommit `json:"head_commit"`
+	Pusher     Pusher     `json:"pusher"`
+	Ref        string     `json:"ref"`
+	Repository `json:"repository"`
 }
 
 type Commits struct {
@@ -72,4 +72,18 @@ type Pusher struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
+}
+
+type Repository struct {
+	Id          int    `json:"id"`
+	NodeId      string `json:"node_id"`
+	Name        string `json:"name"`
+	FullName    string `json:"full_name"`
+	Private     bool   `json:"private"`
+	Owner       Owner  `json:"owner"` // TODO
+	HtmlUrl     string `json:"html_url"`
+	Description string `json:"description"`
+	Fork        bool   `json:"fork"`
+	Url         string `json:"url"`
+	KeysUrl     string `json:"keys_url"`
 }

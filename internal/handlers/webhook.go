@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net/http"
-	"spyrosmoux/api/internal/models"
 )
 
 func HandleWebhook(c *gin.Context) {
@@ -23,14 +21,14 @@ func HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	var result models.GhPushWebhook
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		log.Panicf("Error unmarshalling body: %v", err)
-	}
+	//var result models.GhPushWebhook
+	//err = json.Unmarshal(body, &result)
+	//if err != nil {
+	//	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	//	log.Panicf("Error unmarshalling body: %v", err)
+	//}
 
-	log.Println(result.Repository)
+	log.Println(body)
 
 	//git.PlainClone(result.Repository)
 
