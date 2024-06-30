@@ -11,9 +11,9 @@ func LoadEnvVariable(variable string) string {
 		log.Print("No .env file found, attempting to read from host environment variables")
 	}
 
-	variable = getEnvOrExit("API_PORT")
+	variableValue := getEnvOrExit(variable)
 
-	return variable
+	return variableValue
 }
 
 func getEnvOrExit(key string) string {
