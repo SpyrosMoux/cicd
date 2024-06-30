@@ -33,6 +33,7 @@ func HandleWebhook(c *gin.Context) {
 
 func fetchPipelineConfig(repoFullName, branchName string) ([]byte, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/pipeline.yaml?ref=%s", repoFullName, branchName)
+	log.Printf("Fetching pipeline config from %s", url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
