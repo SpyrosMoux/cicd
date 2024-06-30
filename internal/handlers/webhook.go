@@ -9,7 +9,7 @@ import (
 
 func HandleWebhook(c *gin.Context) {
 	ghSecret := helpers.LoadEnvVariable("GH_SECRET")
-	log.Println(ghSecret)
+	log.Println("Secret: ", ghSecret)
 	hook, _ := github.New(github.Options.Secret(ghSecret))
 
 	payload, err := hook.Parse(c.Request, github.PushEvent)
