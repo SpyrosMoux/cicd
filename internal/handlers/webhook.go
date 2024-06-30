@@ -22,7 +22,7 @@ func HandleWebhook(c *gin.Context) {
 	}
 
 	var result map[string]interface{}
-	err = c.ShouldBindJSON(&result)
+	err = c.ShouldBindBodyWithJSON(&result)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		log.Panicf("Error unmarshalling body: %v", err)
