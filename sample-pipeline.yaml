@@ -10,6 +10,7 @@ jobs:
           git clone https://github.com/Jacks-Decks/jacks-n-decks-api.git
           cd jacks-n-decks-api/
           git checkout origin/develop
+          sleep 30
 
   - name: Build Docker image
     steps:
