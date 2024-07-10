@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/webhooks/v6/github"
+	"github.com/google/go-github/github"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,24 +15,28 @@ var GhSecret = helpers.LoadEnvVariable("GH_SECRET")
 var GhToken = helpers.LoadEnvVariable("GH_TOKEN")
 
 func HandleWebhook(c *gin.Context) {
-	hook, _ := github.New(github.Options.Secret(GhSecret))
-
-	payload, err := hook.Parse(c.Request, github.PushEvent)
+	payload, err := github.ValidatePayload(c.Request, []byte(GhSecret))
 	if err != nil {
-		log.Panicf("Error parsing webhook payload: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
+		return
 	}
 
-	push := payload.(github.PushPayload)
-
-	pipeline, err := fetchPipelineConfig(push.Repository.FullName, push.Ref)
+	event, err := github.ParseWebHook(github.WebHookType(c.Request), payload)
 	if err != nil {
-		log.Panicf("Error fetching pipeline config: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse webhook"})
+		return
 	}
 
-	queue.PublishJob(string(pipeline))
+	switch event := event.(type) {
+	case *github.PushEvent:
+		handlePushEvent(event)
+	default:
+		log.Printf("Unhandled event type: %s", github.WebHookType(c.Request))
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-func fetchPipelineConfig(repoFullName, branchName string) ([]byte, error) {
+func fetchPipelineConfig(repoFullName *string, branchName *string) ([]byte, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
@@ -60,4 +64,16 @@ func fetchPipelineConfig(repoFullName, branchName string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func handlePushEvent(event *github.PushEvent) {
+	// Add logic to handle push events
+	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
+
+	pipeline, err := fetchPipelineConfig(event.Repo.FullName, event.BaseRef)
+	if err != nil {
+		log.Printf("Failed to fetch pipeline config: %v", err)
+	}
+
+	queue.PublishJob(string(pipeline))
 }
