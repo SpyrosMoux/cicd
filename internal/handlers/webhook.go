@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"spyrosmoux/api/internal/helpers"
@@ -36,8 +36,8 @@ func HandleWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-func fetchPipelineConfig(repoFullName *string, branchName *string) ([]byte, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", *repoFullName, *branchName)
+func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -58,7 +58,7 @@ func fetchPipelineConfig(repoFullName *string, branchName *string) ([]byte, erro
 		return nil, fmt.Errorf("failed to fetch pipeline config: %s", resp.Status)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
@@ -70,7 +70,7 @@ func handlePushEvent(event *github.PushEvent) {
 	// Add logic to handle push events
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipeline, err := fetchPipelineConfig(event.Repo.FullName, event.BaseRef)
+	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.BaseRef)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
