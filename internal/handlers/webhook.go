@@ -70,7 +70,7 @@ func handlePushEvent(event *github.PushEvent) {
 	// Add logic to handle push events
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.BaseRef)
+	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
