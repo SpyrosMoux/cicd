@@ -11,11 +11,11 @@ import (
 	"spyrosmoux/api/internal/queue"
 )
 
-var GhSecret = helpers.LoadEnvVariable("GH_SECRET")
+var GhWebhookSecret = helpers.LoadEnvVariable("GH_WEBHOOK_SECRET")
 var GhToken = helpers.LoadEnvVariable("GH_TOKEN")
 
 func HandleWebhook(c *gin.Context) {
-	payload, err := github.ValidatePayload(c.Request, []byte(GhSecret))
+	payload, err := github.ValidatePayload(c.Request, []byte(GhWebhookSecret))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payload"})
 		return
@@ -45,7 +45,7 @@ func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+GhToken)
+	req.Header.Set("Authorization", "Bearer "+GhToken) // TODO(spyrosmoux) not all projects require auth
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -67,7 +67,6 @@ func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error)
 }
 
 func handlePushEvent(event *github.PushEvent) {
-	// Add logic to handle push events
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
 	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref)

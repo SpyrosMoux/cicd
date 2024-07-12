@@ -3,16 +3,21 @@ package queue
 import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
+	"spyrosmoux/api/internal/helpers"
 )
 
 var (
-	conn    *amqp.Connection
-	channel *amqp.Channel
+	conn             *amqp.Connection
+	channel          *amqp.Channel
+	rabbitmqHost     = helpers.LoadEnvVariable("RABBITMQ_HOST")
+	rabbitmqUser     = helpers.LoadEnvVariable("RABBITMQ_USER")
+	rabbitmqPassword = helpers.LoadEnvVariable("RABBITMQ_PASSWORD")
+	rabbitmqPort     = helpers.LoadEnvVariable("RABBITMQ_PORT")
 )
 
 func InitRabbitMQ() {
 	var err error
-	conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err = amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
