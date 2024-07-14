@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 	"spyrosmoux/api/internal/routers"
@@ -18,6 +19,9 @@ func init() {
 func main() {
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()
+
+	// Initialize SuperTokens
+	auth.InitSuperTokens()
 
 	// Setup routes
 	router := routers.SetupRouter()
