@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 )
@@ -40,12 +41,14 @@ func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error)
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
+	token := auth.GenerateJWT()
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+GhToken) // TODO(spyrosmoux) not all projects require auth
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
