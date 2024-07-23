@@ -24,7 +24,7 @@ func (p ProjectsRepositoryImpl) Save(project *models.Project) (*models.Project, 
 }
 
 func (p ProjectsRepositoryImpl) Update(project *models.Project) {
-	//TODO implement me
+	//TODO(spyrosmoux) implement me
 	panic("implement me")
 }
 

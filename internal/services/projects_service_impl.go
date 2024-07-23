@@ -25,7 +25,7 @@ func (p ProjectsServiceImpl) Create(project models.Project) *models.Project {
 }
 
 func (p ProjectsServiceImpl) Update(project models.Project) {
-	//TODO implement me
+	//TODO(spyrosmoux) implement me
 	panic("implement me")
 }
 

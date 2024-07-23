@@ -35,7 +35,7 @@ func (usersHandler *UsersHandler) CreateUser(c *gin.Context) {
 }
 
 func (usersHandler *UsersHandler) UpdateUser(c *gin.Context) {
-	// TODO implement this
+	// TODO(spyrosmoux) implement this
 	panic("implement me")
 }
 

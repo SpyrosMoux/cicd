@@ -34,7 +34,7 @@ func (repositoriesHandler *RepositoriesHandler) CreateRepository(c *gin.Context)
 }
 
 func (repositoriesHandler *RepositoriesHandler) UpdateRepository(c *gin.Context) {
-	// TODO implement this
+	// TODO(spyrosmoux) implement this
 	panic("implement me")
 }
 

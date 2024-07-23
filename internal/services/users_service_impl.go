@@ -23,7 +23,7 @@ func (u UsersServiceImpl) Create(user models.User) *models.User {
 }
 
 func (u UsersServiceImpl) Update(user models.User) {
-	//TODO implement me
+	//TODO(spyrosmoux) implement me
 	panic("implement me")
 }
 
