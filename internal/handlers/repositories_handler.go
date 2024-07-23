@@ -57,6 +57,7 @@ func (repositoriesHandler *RepositoriesHandler) FindRepositoryById(c *gin.Contex
 
 	if repository == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "repository not found"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"repository": repository})

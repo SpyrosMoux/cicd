@@ -38,6 +38,11 @@ func (projectsHandler *ProjectsHandler) FindProjectById(c *gin.Context) {
 	id := c.Param("id")
 	project := projectsHandler.projectsService.FindById(id)
 
+	if project == nil {
+		c.IndentedJSON(http.StatusNotFound, nil)
+		return
+	}
+
 	c.IndentedJSON(http.StatusOK, project)
 }
 
