@@ -6,12 +6,17 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
+	"gorm.io/gorm"
 	"net/http"
 	"spyrosmoux/api/internal/handlers"
+	"spyrosmoux/api/internal/repositories"
+	"spyrosmoux/api/internal/services"
 )
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
+
+	/* SuperTokens Routers */
 
 	// CORS
 	router.Use(cors.New(cors.Config{
@@ -32,14 +37,42 @@ func SetupRouter() *gin.Engine {
 		c.Abort()
 	})
 
-	// API
+	/* API Routers */
+
+	// Webhook
 	router.POST("/webhook", handlers.HandleWebhook)
+
+	// Projects
+	projectsRepository := repositories.NewProjectsRepositoryImpl(db)
+	projectsService := services.NewProjectsServiceImpl(projectsRepository)
+	projectsHandler := handlers.NewProjectsHandler(projectsService)
+	router.POST("/projects", projectsHandler.AddProject)
+	router.GET("/projects", projectsHandler.FindAll)
+	router.GET("/projects/:id", projectsHandler.FindProjectById)
+	router.DELETE("/projects/:id", projectsHandler.Delete)
+
+	// Users
+	usersRepository := repositories.NewUsersRepositoryImpl(db)
+	usersService := services.NewUsersServiceImpl(usersRepository)
+	usersHandler := handlers.NewUsersHandler(usersService)
+	router.POST("/users", usersHandler.CreateUser)
+	router.GET("/users", usersHandler.FindAllUsers)
+	router.GET("/users/:id", usersHandler.FindUserById)
+	router.DELETE("/users/:id", usersHandler.DeleteUser)
+
+	// Repositories
+	repositoriesRepository := repositories.NewRepositoriesRepositoryImpl(db)
+	repositoriesService := services.NewRepositoriesServiceImpl(repositoriesRepository)
+	repositoriesHandler := handlers.NewRepositoriesHandler(repositoriesService)
+	router.POST("/repositories", repositoriesHandler.CreateRepository)
+	router.GET("/repositories", repositoriesHandler.FindAllRepositories)
+	router.GET("/repositories/:id", repositoriesHandler.FindRepositoryById)
+	router.DELETE("/repositories/:id", repositoriesHandler.DeleteRepository)
 
 	return router
 }
 
-// This is a function that wraps the supertokens verification function
-// to work the gin
+// This is a function that wraps the supertokens verification function to work the gin
 func verifySession(options *sessmodels.VerifySessionOptions) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session.VerifySession(options, func(rw http.ResponseWriter, r *http.Request) {

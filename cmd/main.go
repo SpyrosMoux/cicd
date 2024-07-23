@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"spyrosmoux/api/internal/auth"
+	"spyrosmoux/api/internal/db"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 	"spyrosmoux/api/internal/routers"
@@ -17,6 +18,12 @@ func init() {
 }
 
 func main() {
+	// Initialize DB connection
+	dbConnection, err := db.InitDB()
+	if err != nil {
+		log.Fatal("Error initializing database with error: " + err.Error())
+	}
+
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()
 
@@ -24,7 +31,8 @@ func main() {
 	auth.InitSuperTokens()
 
 	// Setup routes
-	router := routers.SetupRouter()
+	// Pass dbConnection to initialize handlers/services/repositories
+	router := routers.SetupRouter(dbConnection)
 
 	log.Printf("Starting server on port %s", apiPort)
 	log.Fatal(router.Run(":" + apiPort))

@@ -7,12 +7,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 )
 
 var GhWebhookSecret = helpers.LoadEnvVariable("GH_WEBHOOK_SECRET")
-var GhToken = helpers.LoadEnvVariable("GH_TOKEN")
 
 func HandleWebhook(c *gin.Context) {
 	payload, err := github.ValidatePayload(c.Request, []byte(GhWebhookSecret))
@@ -36,16 +36,21 @@ func HandleWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error) {
+func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
+
+	token, err := auth.GetInstallationToken(installationId)
+	if err != nil {
+		return nil, err
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+GhToken) // TODO(spyrosmoux) not all projects require auth
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -69,7 +74,7 @@ func fetchPipelineConfig(repoFullName string, branchName string) ([]byte, error)
 func handlePushEvent(event *github.PushEvent) {
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref)
+	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref, *event.Installation.ID)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
