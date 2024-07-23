@@ -60,11 +60,19 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	router.GET("/users/:id", usersHandler.FindUserById)
 	router.DELETE("/users/:id", usersHandler.DeleteUser)
 
+	// Repositories
+	repositoriesRepository := repositories.NewRepositoriesRepositoryImpl(db)
+	repositoriesService := services.NewRepositoriesServiceImpl(repositoriesRepository)
+	repositoriesHandler := handlers.NewRepositoriesHandler(repositoriesService)
+	router.POST("/repositories", repositoriesHandler.CreateRepository)
+	router.GET("/repositories", repositoriesHandler.FindAllRepositories)
+	router.GET("/repositories/:id", repositoriesHandler.FindRepositoryById)
+	router.DELETE("/repositories/:id", repositoriesHandler.DeleteRepository)
+
 	return router
 }
 
-// This is a function that wraps the supertokens verification function
-// to work the gin
+// This is a function that wraps the supertokens verification function to work the gin
 func verifySession(options *sessmodels.VerifySessionOptions) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session.VerifySession(options, func(rw http.ResponseWriter, r *http.Request) {
