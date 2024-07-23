@@ -3,9 +3,14 @@ package auth
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"log"
+	"os"
 	"spyrosmoux/api/internal/helpers"
 	"time"
 )
+
+/*
+INFO: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app
+*/
 
 var (
 	ghAppClientId   = helpers.LoadEnvVariable("GITHUB_APP_CLIENT_ID")
@@ -13,15 +18,20 @@ var (
 )
 
 func GenerateJWT() string {
-	key, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(ghAppPrivateKey))
+	pemFileData, err := os.ReadFile(ghAppPrivateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(pemFileData)
 	if err != nil {
 		log.Fatal("ERROR: Could not parse private key with error: ", err)
 	}
 
 	claims := jwt.MapClaims{
-		"client_id": ghAppClientId,
-		"exp":       time.Now().Add(time.Hour * 1).Unix(), // Token expires in 1 hour
-		"iat":       time.Now().Unix(),                    // Issued at
+		"iat": time.Now().Unix() - 60,  // Issued at, 60 seconds in the past to allow for clock drift
+		"exp": time.Now().Unix() + 600, // Token expires in 10 minutes
+		"iss": ghAppClientId,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
