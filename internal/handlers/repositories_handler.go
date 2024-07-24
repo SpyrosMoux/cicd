@@ -24,13 +24,13 @@ func (repositoriesHandler *RepositoriesHandler) CreateRepository(c *gin.Context)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	createdReporsitory := repositoriesHandler.repositoriesService.Create(repository)
-	if createdReporsitory == nil {
+	createdRepository := repositoriesHandler.repositoriesService.Create(repository)
+	if createdRepository == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"repository": createdReporsitory})
+	c.JSON(http.StatusCreated, gin.H{"repository": createdRepository})
 }
 
 func (repositoriesHandler *RepositoriesHandler) UpdateRepository(c *gin.Context) {
