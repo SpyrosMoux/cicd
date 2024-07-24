@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"spyrosmoux/api/internal/handlers"
-	"spyrosmoux/api/internal/repositories"
-	"spyrosmoux/api/internal/services"
 )
 
 func SetupRouter(db *gorm.DB) *gin.Engine {
@@ -43,31 +41,13 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	router.POST("/webhook", handlers.HandleWebhook)
 
 	// Projects
-	projectsRepository := repositories.NewProjectsRepositoryImpl(db)
-	projectsService := services.NewProjectsServiceImpl(projectsRepository)
-	projectsHandler := handlers.NewProjectsHandler(projectsService)
-	router.POST("/projects", projectsHandler.AddProject)
-	router.GET("/projects", projectsHandler.FindAll)
-	router.GET("/projects/:id", projectsHandler.FindProjectById)
-	router.DELETE("/projects/:id", projectsHandler.Delete)
+	SetupProjectsRouter(db, router)
 
 	// Users
-	usersRepository := repositories.NewUsersRepositoryImpl(db)
-	usersService := services.NewUsersServiceImpl(usersRepository)
-	usersHandler := handlers.NewUsersHandler(usersService)
-	router.POST("/users", usersHandler.CreateUser)
-	router.GET("/users", usersHandler.FindAllUsers)
-	router.GET("/users/:id", usersHandler.FindUserById)
-	router.DELETE("/users/:id", usersHandler.DeleteUser)
+	SetupUsersRouter(db, router)
 
 	// Repositories
-	repositoriesRepository := repositories.NewRepositoriesRepositoryImpl(db)
-	repositoriesService := services.NewRepositoriesServiceImpl(repositoriesRepository)
-	repositoriesHandler := handlers.NewRepositoriesHandler(repositoriesService)
-	router.POST("/repositories", repositoriesHandler.CreateRepository)
-	router.GET("/repositories", repositoriesHandler.FindAllRepositories)
-	router.GET("/repositories/:id", repositoriesHandler.FindRepositoryById)
-	router.DELETE("/repositories/:id", repositoriesHandler.DeleteRepository)
+	SetupRepositoriesRouter(db, router)
 
 	return router
 }
