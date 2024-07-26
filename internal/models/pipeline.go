@@ -11,6 +11,7 @@ type Pipeline struct {
 	Name         string    `json:"name"`
 	RepositoryId string    `json:"repository_id" gorm:"type:uuid"`
 	Path         string    `json:"path"`
+	IsActive     bool      `json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

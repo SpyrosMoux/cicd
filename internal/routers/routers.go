@@ -49,6 +49,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	// Repositories
 	SetupRepositoriesRouter(db, router)
 
+	// Pipelines
+	SetupPipelinesRouter(db, router)
+
 	return router
 }
 
