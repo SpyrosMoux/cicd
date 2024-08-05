@@ -1,24 +1,25 @@
-package auth
+package helpers
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"spyrosmoux/api/internal/auth"
 )
 
 /*
 INFO: https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation
 */
 
-type AccessTokenResponse struct {
+type accessTokenResponse struct {
 	AccessToken         string     `json:"token"`
 	ExpiresAt           string     `json:"expires_at"`
-	Permissions         Permission `json:"permissions"`
+	Permissions         permission `json:"permissions"`
 	RepositorySelection string     `json:"repository_selection"`
 }
 
-type Permission struct {
+type permission struct {
 	Contents        string `json:"contents"`
 	Metadata        string `json:"metadata"`
 	PullRequests    string `json:"pull_requests"`
@@ -27,7 +28,7 @@ type Permission struct {
 }
 
 func GetInstallationToken(installationId int64) (string, error) {
-	token := GenerateJWT()
+	token := auth.GenerateJWT()
 
 	url := fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationId)
 
@@ -51,7 +52,7 @@ func GetInstallationToken(installationId int64) (string, error) {
 		return "", err
 	}
 
-	var tokenResponse AccessTokenResponse
+	var tokenResponse accessTokenResponse
 	err = json.Unmarshal(body, &tokenResponse)
 
 	return tokenResponse.AccessToken, nil
