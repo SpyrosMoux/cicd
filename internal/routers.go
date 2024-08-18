@@ -1,0 +1,72 @@
+package internal
+
+import (
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/supertokens/supertokens-golang/recipe/session"
+	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
+	"github.com/supertokens/supertokens-golang/supertokens"
+	"gorm.io/gorm"
+	"net/http"
+	"spyrosmoux/api/internal/pipeline"
+	"spyrosmoux/api/internal/project"
+	"spyrosmoux/api/internal/repository"
+	"spyrosmoux/api/internal/user"
+	"spyrosmoux/api/internal/webhook"
+)
+
+func SetupRouter(db *gorm.DB) *gin.Engine {
+	router := gin.Default()
+
+	/* SuperTokens Routers */
+
+	// CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:3000"},
+		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
+		AllowHeaders: append([]string{"content-type"},
+			supertokens.GetAllCORSHeaders()...),
+		AllowCredentials: true,
+	}))
+
+	// Adding the SuperTokens middleware
+	router.Use(func(c *gin.Context) {
+		supertokens.Middleware(http.HandlerFunc(
+			func(rw http.ResponseWriter, r *http.Request) {
+				c.Next()
+			})).ServeHTTP(c.Writer, c.Request)
+		// we call Abort so that the next handler in the chain is not called, unless we call Next explicitly
+		c.Abort()
+	})
+
+	/* API Routers */
+
+	// Webhook
+	router.POST("/webhook", webhook.HandleWebhook)
+
+	// Projects
+	project.SetupProjectsRouter(db, router)
+
+	// Users
+	user.SetupUsersRouter(db, router)
+
+	// Repositories
+	repository.SetupRepositoriesRouter(db, router)
+
+	// Pipelines
+	pipeline.SetupPipelinesRouter(db, router)
+
+	return router
+}
+
+// This is a function that wraps the supertokens verification function to work the gin
+func verifySession(options *sessmodels.VerifySessionOptions) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session.VerifySession(options, func(rw http.ResponseWriter, r *http.Request) {
+			c.Request = c.Request.WithContext(r.Context())
+			c.Next()
+		})(c.Writer, c.Request)
+		// we call Abort so that the next handler in the chain is not called, unless we call Next explicitly
+		c.Abort()
+	}
+}

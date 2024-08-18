@@ -9,7 +9,7 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/thirdparty/tpmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
 	"spyrosmoux/api/internal/helpers"
-	"spyrosmoux/api/internal/models"
+	"spyrosmoux/api/internal/user"
 )
 
 var (
@@ -83,7 +83,7 @@ func overrideThirdPartySignInUp(originalImplementation tpmodels.RecipeInterface)
 		if response.OK != nil {
 			// sign in / up was successful
 			if response.OK.CreatedNewUser {
-				var userToSave models.User
+				var userToSave user.User
 				mapSupertokensUserToApiUser(&response.OK.User, &userToSave)
 				// TODO(spyrosmoux) save to DB
 			}
@@ -94,7 +94,7 @@ func overrideThirdPartySignInUp(originalImplementation tpmodels.RecipeInterface)
 	return originalImplementation
 }
 
-func mapSupertokensUserToApiUser(user *tpmodels.User, userToSave *models.User) {
+func mapSupertokensUserToApiUser(user *tpmodels.User, userToSave *user.User) {
 	userToSave.SuperTokensID = user.ID
 	userToSave.Email = user.Email
 }

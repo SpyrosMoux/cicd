@@ -3,7 +3,10 @@ package db
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"spyrosmoux/api/internal/models"
+	"spyrosmoux/api/internal/pipeline"
+	"spyrosmoux/api/internal/project"
+	"spyrosmoux/api/internal/repository"
+	"spyrosmoux/api/internal/user"
 )
 
 func InitDB() (*gorm.DB, error) {
@@ -13,7 +16,7 @@ func InitDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Project{}, &models.Repository{}, &models.Pipeline{})
+	err = db.AutoMigrate(&user.User{}, &project.Project{}, &repository.Repository{}, &pipeline.Pipeline{})
 	if err != nil {
 		return nil, err
 	}

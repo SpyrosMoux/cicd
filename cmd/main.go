@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
+	"spyrosmoux/api/internal"
 	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/db"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
-	"spyrosmoux/api/internal/routers"
 )
 
 var (
@@ -32,7 +32,7 @@ func main() {
 
 	// Setup routes
 	// Pass dbConnection to initialize handlers/services/repositories
-	router := routers.SetupRouter(dbConnection)
+	router := internal.SetupRouter(dbConnection)
 
 	log.Printf("Starting server on port %s", apiPort)
 	log.Fatal(router.Run(":" + apiPort))
