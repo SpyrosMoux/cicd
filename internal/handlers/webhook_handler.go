@@ -37,6 +37,7 @@ func HandleWebhook(c *gin.Context) {
 }
 
 func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
+	// TODO(spyrosmoux) should get the yaml name from DB
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
