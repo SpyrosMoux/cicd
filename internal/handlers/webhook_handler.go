@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 )
@@ -35,13 +36,11 @@ func HandleWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-// fetchPipelineConfig
-// For now we assume there is a single sample-pipeline.yaml file in the root of the project.
 func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
-	token, err := helpers.GetInstallationToken(installationId)
+	token, err := auth.GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
 	}
