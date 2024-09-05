@@ -1,15 +1,16 @@
-package auth
+package gh
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"spyrosmoux/api/internal/helpers"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 /*

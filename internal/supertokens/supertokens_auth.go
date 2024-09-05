@@ -1,4 +1,4 @@
-package auth
+package supertokens
 
 import (
 	"spyrosmoux/api/internal/helpers"

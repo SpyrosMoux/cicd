@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"spyrosmoux/api/internal/auth"
+	"spyrosmoux/api/internal/gh"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 
@@ -43,7 +43,7 @@ func fetchPipelineConfig(repoFullName string, branchName string, installationId 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
-	token, err := auth.GetInstallationToken(installationId)
+	token, err := gh.GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
 	}

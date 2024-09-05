@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
 	"spyrosmoux/api/internal/routers"
+	"spyrosmoux/api/internal/supertokens"
 )
 
 var (
@@ -21,7 +21,7 @@ func main() {
 	queue.InitRabbitMQ()
 
 	// Initialize SuperTokens
-	auth.InitSuperTokens()
+	supertokens.InitSuperTokens()
 
 	// Setup routes
 	router := routers.SetupRouter()
