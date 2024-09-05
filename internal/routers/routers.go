@@ -1,17 +1,17 @@
 package routers
 
 import (
+	"net/http"
+	"spyrosmoux/api/internal/handlers"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
-	"gorm.io/gorm"
-	"net/http"
-	"spyrosmoux/api/internal/handlers"
 )
 
-func SetupRouter(db *gorm.DB) *gin.Engine {
+func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
 	/* SuperTokens Routers */
@@ -35,22 +35,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.Abort()
 	})
 
-	/* API Routers */
-
-	// Webhook
 	router.POST("/webhook", handlers.HandleWebhook)
-
-	// Projects
-	SetupProjectsRouter(db, router)
-
-	// Users
-	SetupUsersRouter(db, router)
-
-	// Repositories
-	SetupRepositoriesRouter(db, router)
-
-	// Pipelines
-	SetupPipelinesRouter(db, router)
 
 	return router
 }

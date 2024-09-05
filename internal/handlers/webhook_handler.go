@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/github"
 	"io"
 	"log"
 	"net/http"
 	"spyrosmoux/api/internal/auth"
 	"spyrosmoux/api/internal/helpers"
 	"spyrosmoux/api/internal/queue"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/github"
 )
 
 var GhWebhookSecret = helpers.LoadEnvVariable("GH_WEBHOOK_SECRET")
@@ -37,7 +38,8 @@ func HandleWebhook(c *gin.Context) {
 }
 
 func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
-	// TODO(spyrosmoux) should get the yaml name from DB
+	// TODO(spyrosmoux) should search for pipeline yaml in repo
+	// TODO(spyrosmoux) should validate yaml structure
 	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
 	log.Printf("Fetching pipeline config from %s", url)
 
