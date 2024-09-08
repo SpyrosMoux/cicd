@@ -5,12 +5,13 @@ build:
 docker-build:
 	docker build -t ghcr.io/spyrosmoux/api .
 
-run-local: build
+run-local-deps:
 	docker compose -f docker-compose.deps.yaml up -d
+
+run-local: build run-local-deps
 	go run cmd/main.go
 
-run-docker: docker-build
-	docker compose -f docker-compose.deps.yaml up -d
+run-docker: docker-build run-local-deps
 	docker compose -f docker-compose.yaml up -d
 
 proxy-webhook: # for local use only

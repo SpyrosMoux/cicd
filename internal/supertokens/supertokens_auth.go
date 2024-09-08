@@ -1,7 +1,7 @@
 package supertokens
 
 import (
-	"spyrosmoux/api/internal/helpers"
+	"github.com/spyrosmoux/api/internal/helpers"
 
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/session"

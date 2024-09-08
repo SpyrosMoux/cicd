@@ -2,10 +2,11 @@ package main
 
 import (
 	"log"
-	"spyrosmoux/api/internal/helpers"
-	"spyrosmoux/api/internal/queue"
-	"spyrosmoux/api/internal/routers"
-	"spyrosmoux/api/internal/supertokens"
+
+	"github.com/spyrosmoux/api/internal/helpers"
+	"github.com/spyrosmoux/api/internal/queue"
+	"github.com/spyrosmoux/api/internal/routers"
+	"github.com/spyrosmoux/api/internal/supertokens"
 )
 
 var (
