@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
-
-	"github.com/spyrosmoux/api/internal/gh"
-	"github.com/spyrosmoux/api/internal/helpers"
+	"spyrosmoux/api/internal/gh"
+	"spyrosmoux/api/internal/helpers"
+	"spyrosmoux/api/internal/queue"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"
@@ -36,14 +37,50 @@ func HandleWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
+func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
+	// TODO(spyrosmoux) should search for pipeline yaml in repo
+	// TODO(spyrosmoux) should validate yaml structure
+	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
+	log.Printf("Fetching pipeline config from %s", url)
+
+	token, err := gh.GetInstallationToken(installationId)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3.raw")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch pipeline config: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch pipeline config: %s", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return body, nil
+}
+
 func handlePushEvent(event *github.PushEvent) {
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipeline, err := gh.FetchPipelineConfig(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
+	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref, *event.Installation.ID)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
 
-	// queue.PublishJob(string(pipeline))
-	fmt.Println(pipeline)
+	queue.PublishJob(string(pipeline))
 }

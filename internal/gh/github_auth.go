@@ -7,9 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"spyrosmoux/api/internal/helpers"
 	"time"
-
-	"github.com/spyrosmoux/api/internal/helpers"
 
 	"github.com/golang-jwt/jwt/v5"
 )
