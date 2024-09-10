@@ -1,9 +1,10 @@
 package queue
 
 import (
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
-	"spyrosmoux/api/internal/helpers"
+
+	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/spyrosmoux/api/internal/helpers"
 )
 
 var (

@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"spyrosmoux/api/internal/helpers"
 	"time"
+
+	"github.com/spyrosmoux/api/internal/helpers"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -37,6 +38,7 @@ var (
 	ghAppPrivateKey = helpers.LoadEnvVariable("GITHUB_APP_PRIVATE_KEY_PATH")
 )
 
+// GetInstallationToken Uses an installationId and a generated JWT token to get an access token
 func GetInstallationToken(installationId int64) (string, error) {
 	token := GenerateJWT()
 
@@ -68,6 +70,8 @@ func GetInstallationToken(installationId int64) (string, error) {
 	return tokenResponse.AccessToken, nil
 }
 
+// GenerateJWT generates a JWT token from a given GitHub App private key and pem file.
+// TODO(spyrosmoux) should return error instead of fatalling
 func GenerateJWT() string {
 	pemFileData, err := os.ReadFile(ghAppPrivateKey)
 	if err != nil {
