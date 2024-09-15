@@ -1,9 +1,10 @@
 package queue
 
 import (
-	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
-	"spyrosmoux/api/internal/helpers"
+
+	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/spyrosmoux/api/internal/helpers"
 )
 
 var (
@@ -29,7 +30,7 @@ func InitRabbitMQ() {
 
 	_, err = channel.QueueDeclare(
 		"jobs",
-		false,
+		true,
 		false,
 		false,
 		false,
@@ -47,8 +48,9 @@ func PublishJob(body string) {
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
+			ContentType:  "text/plain",
+			Body:         []byte(body),
+			DeliveryMode: amqp.Persistent,
 		},
 	)
 	if err != nil {

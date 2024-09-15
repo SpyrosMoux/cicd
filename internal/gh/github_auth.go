@@ -1,10 +1,17 @@
-package auth
+package gh
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"time"
+
+	"github.com/spyrosmoux/api/internal/helpers"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 /*
@@ -26,6 +33,12 @@ type Permission struct {
 	Statuses        string `json:"statuses"`
 }
 
+var (
+	ghAppClientId   = helpers.LoadEnvVariable("GITHUB_APP_CLIENT_ID")
+	ghAppPrivateKey = helpers.LoadEnvVariable("GITHUB_APP_PRIVATE_KEY_PATH")
+)
+
+// GetInstallationToken Uses an installationId and a generated JWT token to get an access token
 func GetInstallationToken(installationId int64) (string, error) {
 	token := GenerateJWT()
 
@@ -55,4 +68,33 @@ func GetInstallationToken(installationId int64) (string, error) {
 	err = json.Unmarshal(body, &tokenResponse)
 
 	return tokenResponse.AccessToken, nil
+}
+
+// GenerateJWT generates a JWT token from a given GitHub App private key and pem file.
+// TODO(spyrosmoux) should return error instead of fatalling
+func GenerateJWT() string {
+	pemFileData, err := os.ReadFile(ghAppPrivateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(pemFileData)
+	if err != nil {
+		log.Fatal("ERROR: Could not parse private key with error: ", err)
+	}
+
+	claims := jwt.MapClaims{
+		"iat": time.Now().Unix() - 60,  // Issued at, 60 seconds in the past to allow for clock drift
+		"exp": time.Now().Unix() + 600, // Token expires in 10 minutes
+		"iss": ghAppClientId,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+
+	signedToken, err := token.SignedString(key)
+	if err != nil {
+		log.Fatal("ERROR: Could not generate token with error: ", err)
+	}
+
+	return signedToken
 }

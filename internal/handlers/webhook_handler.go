@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/github"
-	"io"
 	"log"
 	"net/http"
-	"spyrosmoux/api/internal/auth"
-	"spyrosmoux/api/internal/helpers"
-	"spyrosmoux/api/internal/queue"
+
+	"github.com/spyrosmoux/api/internal/gh"
+	"github.com/spyrosmoux/api/internal/helpers"
+	"github.com/spyrosmoux/api/internal/queue"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/github"
 )
 
 var GhWebhookSecret = helpers.LoadEnvVariable("GH_WEBHOOK_SECRET")
@@ -36,49 +37,17 @@ func HandleWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-func fetchPipelineConfig(repoFullName string, branchName string, installationId int64) ([]byte, error) {
-	// TODO(spyrosmoux) should get the yaml name from DB
-	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/sample-pipeline.yaml?ref=%s", repoFullName, branchName)
-	log.Printf("Fetching pipeline config from %s", url)
-
-	token, err := auth.GetInstallationToken(installationId)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch pipeline config: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch pipeline config: %s", resp.Status)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	return body, nil
-}
-
 func handlePushEvent(event *github.PushEvent) {
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipeline, err := fetchPipelineConfig(*event.Repo.FullName, *event.Ref, *event.Installation.ID)
+	pipelines, err := gh.FetchPipelineConfig(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
 
-	queue.PublishJob(string(pipeline))
+	// Publish all triggered pipelines
+	for _, pipeline := range pipelines {
+		fmt.Println("Publishing pipeline: " + pipeline)
+		queue.PublishJob(pipeline)
+	}
 }

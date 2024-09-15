@@ -1,15 +1,14 @@
-package auth
+package supertokens
 
 import (
-	"fmt"
+	"github.com/spyrosmoux/api/internal/helpers"
+
 	"github.com/supertokens/supertokens-golang/recipe/emailpassword"
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"github.com/supertokens/supertokens-golang/recipe/session/sessmodels"
 	"github.com/supertokens/supertokens-golang/recipe/thirdparty"
 	"github.com/supertokens/supertokens-golang/recipe/thirdparty/tpmodels"
 	"github.com/supertokens/supertokens-golang/supertokens"
-	"spyrosmoux/api/internal/helpers"
-	"spyrosmoux/api/internal/models"
 )
 
 var (
@@ -50,9 +49,6 @@ func InitSuperTokens() {
 						},
 					},
 				},
-				Override: &tpmodels.OverrideStruct{
-					Functions: overrideThirdPartySignInUp,
-				},
 			}),
 			emailpassword.Init(nil),
 			session.Init(&sessmodels.TypeInput{
@@ -64,37 +60,4 @@ func InitSuperTokens() {
 	if err != nil {
 		panic(err.Error())
 	}
-}
-
-func overrideThirdPartySignInUp(originalImplementation tpmodels.RecipeInterface) tpmodels.RecipeInterface {
-	// create a copy of the originalImplementation
-	originalSignInUp := *originalImplementation.SignInUp
-
-	// override the sign in up function
-	*originalImplementation.SignInUp = func(thirdPartyID string, thirdPartyUserID string, email string, oAuthTokens map[string]interface{}, rawUserInfoFromProvider tpmodels.TypeRawUserInfoFromProvider, tenantId string, userContext *map[string]interface{}) (tpmodels.SignInUpResponse, error) {
-		// First we call the original implementation of SignInUp.
-		response, err := originalSignInUp(thirdPartyID, thirdPartyUserID, email, oAuthTokens, rawUserInfoFromProvider, tenantId, userContext)
-		if err != nil {
-			return tpmodels.SignInUpResponse{}, err
-		}
-
-		fmt.Println(response.OK.OAuthTokens["access_token"].(string))
-
-		if response.OK != nil {
-			// sign in / up was successful
-			if response.OK.CreatedNewUser {
-				var userToSave models.User
-				mapSupertokensUserToApiUser(&response.OK.User, &userToSave)
-				// TODO(spyrosmoux) save to DB
-			}
-		}
-		return response, nil
-	}
-
-	return originalImplementation
-}
-
-func mapSupertokensUserToApiUser(user *tpmodels.User, userToSave *models.User) {
-	userToSave.SuperTokensID = user.ID
-	userToSave.Email = user.Email
 }
