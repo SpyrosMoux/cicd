@@ -16,6 +16,16 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       GIN_MODE: release
 
+  core-engine-02:
+    container_name: core-engine-02
+    image: ghcr.io/spyrosmoux/core-engine
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      GIN_MODE: release
+
   # Note: If you are assigning a custom name to your db service on the line below, make sure it does not contain underscores
   supertokens-db:
     image: "postgres:latest"

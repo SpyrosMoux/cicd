@@ -30,7 +30,7 @@ func InitRabbitMQ() {
 
 	_, err = channel.QueueDeclare(
 		"jobs",
-		false,
+		true,
 		false,
 		false,
 		false,
@@ -48,8 +48,9 @@ func PublishJob(body string) {
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
+			ContentType:  "text/plain",
+			Body:         []byte(body),
+			DeliveryMode: amqp.Persistent,
 		},
 	)
 	if err != nil {
