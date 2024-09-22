@@ -3,7 +3,7 @@ package routers
 import (
 	"net/http"
 
-	"github.com/spyrosmoux/api/internal/handlers"
+	"github.com/spyrosmoux/api/pkg/handlers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,7 +19,7 @@ func SetupRouter() *gin.Engine {
 
 	// CORS
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:3000"},
+		AllowOrigins: []string{"http://localhost:3000", "http://localhost:63342"},
 		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
 		AllowHeaders: append([]string{"content-type"},
 			supertokens.GetAllCORSHeaders()...),
@@ -37,6 +37,8 @@ func SetupRouter() *gin.Engine {
 	})
 
 	router.POST("/webhook", handlers.HandleWebhook)
+	router.GET("/runs", handlers.HandleGetPipelineRuns)
+	router.POST("/runs/:id", handlers.UpdatePipelineRun)
 
 	return router
 }

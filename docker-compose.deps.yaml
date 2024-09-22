@@ -1,4 +1,14 @@
 services:
+  api-db:
+    image: postgres
+    container_name: api-db
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: api_user
+      POSTGRES_PASSWORD: somePassword
+      POSTGRES_DB: api
+
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: rabbitmq

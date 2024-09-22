@@ -3,6 +3,7 @@ package queue
 import (
 	"log"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spyrosmoux/api/internal/helpers"
 )
@@ -41,16 +42,17 @@ func InitRabbitMQ() {
 	}
 }
 
-func PublishJob(body string) {
+func PublishJob(pipelineRunId uuid.UUID, body string) {
 	err := channel.Publish(
 		"",
 		"jobs",
 		false,
 		false,
 		amqp.Publishing{
-			ContentType:  "text/plain",
-			Body:         []byte(body),
-			DeliveryMode: amqp.Persistent,
+			ContentType:   "text/plain",
+			Body:          []byte(body),
+			DeliveryMode:  amqp.Persistent,
+			CorrelationId: pipelineRunId.String(),
 		},
 	)
 	if err != nil {

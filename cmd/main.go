@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/spyrosmoux/api/internal/db"
+	"github.com/spyrosmoux/api/pkg/pipelineruns"
 	"log"
 
 	"github.com/spyrosmoux/api/internal/helpers"
@@ -18,6 +20,9 @@ func init() {
 }
 
 func main() {
+	// Initialize Db Connection
+	db.Init("flowforge.db", &pipelineruns.PipelineRun{})
+
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()
 

@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/spyrosmoux/api/pkg/pipelineruns"
+
 	"github.com/spyrosmoux/api/internal/gh"
 	"github.com/spyrosmoux/api/internal/helpers"
 	"github.com/spyrosmoux/api/internal/queue"
@@ -45,9 +47,23 @@ func handlePushEvent(event *github.PushEvent) {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
 
+	// TODO(spyrosmoux) for every pipeline in the pipelines slice, we need to create a new PipelineRun.
+	// Autogenerate an Id, status by default is pending.
+	//
+	// We should also send the Id along with the pipeline yaml.
+
+	pipelineRunsClient, err := pipelineruns.NewClient()
+	if err != nil {
+		log.Printf("Failed to create client for pipeline runs: %v", err)
+	}
+
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
-		fmt.Println("Publishing pipeline: " + pipeline)
-		queue.PublishJob(pipeline)
+		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
+
+		pipelineRunsClient.AddPipelineRun(pipelineRun)
+
+		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id.String())
+		queue.PublishJob(pipelineRun.Id, pipeline)
 	}
 }
