@@ -10,6 +10,7 @@ type Client interface {
 	GetPipelineRuns() (*[]PipelineRun, error)
 	AddPipelineRun(pipelineRun *PipelineRun) error
 	UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*PipelineRun, error)
+	UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error)
 }
 
 type ClientImpl struct{}
@@ -54,6 +55,25 @@ func (client *ClientImpl) UpdatePipelineRun(pipelineRunId string, pipelineRun *P
 	savedPipelineRun.TimeEnded = pipelineRun.TimeEnded
 
 	result = db.DB.Save(&savedPipelineRun)
+	if result.Error != nil {
+		log.Printf("Error updating pipeline run: %v", result.Error)
+		return &PipelineRun{}, result.Error
+	}
+
+	return &savedPipelineRun, nil
+}
+
+func (client *ClientImpl) UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error) {
+	var savedPipelineRun PipelineRun
+	result := db.DB.Find(&savedPipelineRun, pipelineRunId)
+	if result.Error != nil {
+		log.Printf("Error finding pipeline run with id: %v and error: %v", pipelineRunId, result.Error)
+		return &PipelineRun{}, result.Error
+	}
+
+	savedPipelineRun.Status = status.String()
+
+	result = db.DB.Save(savedPipelineRun)
 	if result.Error != nil {
 		log.Printf("Error updating pipeline run: %v", result.Error)
 		return &PipelineRun{}, result.Error
