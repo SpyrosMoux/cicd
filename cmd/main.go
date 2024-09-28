@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/spyrosmoux/api/internal/db"
-	"github.com/spyrosmoux/api/pkg/pipelineruns"
+	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
 	"log"
 
 	"github.com/spyrosmoux/api/internal/helpers"

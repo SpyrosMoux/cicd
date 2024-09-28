@@ -3,7 +3,7 @@ package routers
 import (
 	"net/http"
 
-	"github.com/spyrosmoux/api/pkg/handlers"
+	"github.com/spyrosmoux/api/pkg/api/handlers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -39,6 +39,7 @@ func SetupRouter() *gin.Engine {
 	router.POST("/webhook", handlers.HandleWebhook)
 	router.GET("/runs", handlers.HandleGetPipelineRuns)
 	router.POST("/runs/:id", handlers.UpdatePipelineRun)
+	router.POST("/runs/:id/:status", handlers.UpdatePipelineRunStatus)
 
 	return router
 }

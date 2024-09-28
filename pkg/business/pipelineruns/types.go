@@ -1,6 +1,8 @@
 package pipelineruns
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,5 +54,22 @@ func NewPipelineRun(repository, branch string) *PipelineRun {
 		TimeTriggered: time.Now().Unix(),
 		TimeStarted:   0, // init as 0, will be updated by the runner once started
 		TimeEnded:     0, // init as 0, will be updated by the runner once finished
+	}
+}
+
+func ParseStatus(statusStr string) (Status, error) {
+	switch strings.ToLower(statusStr) {
+	case "pending":
+		return PENDING, nil
+	case "running":
+		return RUNNING, nil
+	case "canceled":
+		return CANCELED, nil
+	case "failed":
+		return FAILED, nil
+	case "completed":
+		return COMPLETED, nil
+	default:
+		return 0, errors.New("invalid status")
 	}
 }

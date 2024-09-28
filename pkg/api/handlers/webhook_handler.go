@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/spyrosmoux/api/pkg/pipelineruns"
+	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
 
 	"github.com/spyrosmoux/api/internal/gh"
 	"github.com/spyrosmoux/api/internal/helpers"
@@ -52,16 +52,11 @@ func handlePushEvent(event *github.PushEvent) {
 	//
 	// We should also send the Id along with the pipeline yaml.
 
-	pipelineRunsClient, err := pipelineruns.NewClient()
-	if err != nil {
-		log.Printf("Failed to create client for pipeline runs: %v", err)
-	}
-
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
 		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
-		pipelineRunsClient.AddPipelineRun(pipelineRun)
+		pipelineruns.AddPipelineRun(pipelineRun)
 
 		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id.String())
 		queue.PublishJob(pipelineRun.Id, pipeline)

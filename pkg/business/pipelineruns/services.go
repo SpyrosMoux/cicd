@@ -6,20 +6,7 @@ import (
 	"github.com/spyrosmoux/api/internal/db"
 )
 
-type Client interface {
-	GetPipelineRuns() (*[]PipelineRun, error)
-	AddPipelineRun(pipelineRun *PipelineRun) error
-	UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*PipelineRun, error)
-	UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error)
-}
-
-type ClientImpl struct{}
-
-func NewClient() (Client, error) {
-	return &ClientImpl{}, nil
-}
-
-func (client *ClientImpl) GetPipelineRuns() (*[]PipelineRun, error) {
+func GetPipelineRuns() (*[]PipelineRun, error) {
 	var pipelineRuns *[]PipelineRun
 
 	result := db.DB.Find(&pipelineRuns)
@@ -30,7 +17,7 @@ func (client *ClientImpl) GetPipelineRuns() (*[]PipelineRun, error) {
 	return pipelineRuns, nil
 }
 
-func (client *ClientImpl) AddPipelineRun(pipelineRun *PipelineRun) error {
+func AddPipelineRun(pipelineRun *PipelineRun) error {
 	result := db.DB.Create(pipelineRun)
 	if result.Error != nil {
 		log.Printf("Error adding pipeline run: %v", result.Error)
@@ -39,7 +26,7 @@ func (client *ClientImpl) AddPipelineRun(pipelineRun *PipelineRun) error {
 	return nil
 }
 
-func (client *ClientImpl) UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*PipelineRun, error) {
+func UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*PipelineRun, error) {
 	var savedPipelineRun PipelineRun
 	result := db.DB.Find(&savedPipelineRun, pipelineRunId)
 	if result.Error != nil {
@@ -63,7 +50,7 @@ func (client *ClientImpl) UpdatePipelineRun(pipelineRunId string, pipelineRun *P
 	return &savedPipelineRun, nil
 }
 
-func (client *ClientImpl) UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error) {
+func UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error) {
 	var savedPipelineRun PipelineRun
 	result := db.DB.Find(&savedPipelineRun, pipelineRunId)
 	if result.Error != nil {
