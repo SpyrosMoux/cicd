@@ -24,6 +24,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_PORT: ${RABBITMQ_PORT}
+      API_BASE_URL: ${API_BASE_URL}
       GIN_MODE: release
 
   core-engine-02:
@@ -34,6 +35,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_PORT: ${RABBITMQ_PORT}
+      API_BASE_URL: ${API_BASE_URL}
       GIN_MODE: release
 
   # Note: If you are assigning a custom name to your db service on the line below, make sure it does not contain underscores

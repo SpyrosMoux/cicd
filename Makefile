@@ -5,6 +5,9 @@ build:
 docker-build:
 	docker build -t ghcr.io/spyrosmoux/api .
 
+docker-push: docker-build
+	docker push ghcr.io/spyrosmoux/api
+
 run-local-deps:
 	docker compose -f docker-compose.deps.yaml up -d
 
