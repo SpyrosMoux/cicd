@@ -27,7 +27,7 @@ func NewClient(baseURL string) *Client {
 func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	payload, err := json.Marshal(status)
+	payload, err := json.Marshal(status.String())
 	if err != nil {
 		return nil, err
 	}
