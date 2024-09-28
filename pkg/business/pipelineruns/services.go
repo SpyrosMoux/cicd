@@ -52,7 +52,7 @@ func UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*Pipelin
 
 func UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error) {
 	var savedPipelineRun PipelineRun
-	result := db.DB.Find(&savedPipelineRun, pipelineRunId)
+	result := db.DB.Where("id = ?", pipelineRunId).First(&savedPipelineRun)
 	if result.Error != nil {
 		log.Printf("Error finding pipeline run with id: %v and error: %v", pipelineRunId, result.Error)
 		return &PipelineRun{}, result.Error

@@ -21,7 +21,7 @@ func UpdatePipelineRun(c *gin.Context) {
 	runId := c.Param("id")
 
 	var pipelineRun *pipelineruns.PipelineRun
-	c.ShouldBindBodyWithJSON(&pipelineRun)
+	c.ShouldBindJSON(&pipelineRun)
 
 	updatedPipelineRun, err := pipelineruns.UpdatePipelineRun(runId, pipelineRun)
 	if err != nil {
@@ -34,9 +34,14 @@ func UpdatePipelineRun(c *gin.Context) {
 
 func UpdatePipelineRunStatus(c *gin.Context) {
 	runId := c.Param("id")
-	statusStr := c.Param("status")
 
-	status, err := pipelineruns.ParseStatus(statusStr)
+	var statusStr pipelineruns.StatusDto
+	err := c.ShouldBindJSON(&statusStr)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	status, err := pipelineruns.ParseStatus(statusStr.Status)
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

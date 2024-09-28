@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,10 +25,20 @@ func NewClient(baseURL string) *Client {
 }
 
 func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
-	url := fmt.Sprintf("%s/runs/%s/%s", c.BaseURL, pipelineRunId, status)
+	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
+
+	payload, err := json.Marshal(status)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
 
 	// Make the HTTP request to the API
-	resp, err := c.HTTPClient.Post(url, "application/json", nil)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
