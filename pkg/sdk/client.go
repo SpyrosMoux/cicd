@@ -24,7 +24,7 @@ func NewClient(baseURL string) *Client {
 }
 
 func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
-	url := fmt.Sprintf("%s/runs/:id%s/:status%s", c.BaseURL, pipelineRunId, status)
+	url := fmt.Sprintf("%s/runs/%s/%s", c.BaseURL, pipelineRunId, status)
 
 	// Make the HTTP request to the API
 	resp, err := c.HTTPClient.Post(url, "application/json", nil)
