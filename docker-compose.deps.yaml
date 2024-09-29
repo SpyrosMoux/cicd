@@ -5,9 +5,9 @@ services:
     ports:
       - 5433:5432
     environment:
-      POSTGRES_USER: api_user
-      POSTGRES_PASSWORD: somePassword
-      POSTGRES_DB: api
+      POSTGRES_USER: ${POSTGRES_USER:-api_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somePassword}
+      POSTGRES_DB: ${POSTGRES_DB:-api}
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -26,6 +26,10 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       API_BASE_URL: ${API_BASE_URL}
       GIN_MODE: release
+    depends_on:
+      - rabbitmq
+    volumes:
+      - /var/run/docker.sock.raw:/var/run/docker.sock
 
   core-engine-02:
     container_name: core-engine-02
@@ -37,6 +41,10 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       API_BASE_URL: ${API_BASE_URL}
       GIN_MODE: release
+    depends_on:
+      - rabbitmq
+    volumes:
+      - /var/run/docker.sock.raw:/var/run/docker.sock
 
   # Note: If you are assigning a custom name to your db service on the line below, make sure it does not contain underscores
   supertokens-db:

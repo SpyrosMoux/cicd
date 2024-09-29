@@ -47,18 +47,17 @@ func handlePushEvent(event *github.PushEvent) {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 	}
 
-	// TODO(spyrosmoux) for every pipeline in the pipelines slice, we need to create a new PipelineRun.
-	// Autogenerate an Id, status by default is pending.
-	//
-	// We should also send the Id along with the pipeline yaml.
-
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
 		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
-		pipelineruns.AddPipelineRun(pipelineRun)
+		err := pipelineruns.AddPipelineRun(pipelineRun)
+		if err != nil {
+			log.Printf("Failed to add pipeline run: %v", err)
+			return
+		}
 
-		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id.String())
+		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
 		queue.PublishJob(pipelineRun.Id, pipeline)
 	}
 }

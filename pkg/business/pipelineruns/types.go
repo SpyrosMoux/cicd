@@ -19,18 +19,18 @@ const (
 )
 
 type PipelineRun struct {
-	Id            uuid.UUID `json:"id" gorm:"primaryKey"`
-	Status        string    `json:"status"`
-	Repository    string    `json:"repository"`
-	Branch        string    `json:"branch"`
-	TimeTriggered int64     `json:"time_triggered"`
-	TimeStarted   int64     `json:"time_started"`
-	TimeEnded     int64     `json:"time_ended"`
+	Id            string `json:"id" gorm:"primary_key"`
+	Status        string `json:"status"`
+	Repository    string `json:"repository"`
+	Branch        string `json:"branch"`
+	TimeTriggered int64  `json:"time_triggered"`
+	TimeStarted   int64  `json:"time_started"`
+	TimeEnded     int64  `json:"time_ended"`
 }
 
 func NewPipelineRun(repository, branch string) *PipelineRun {
 	return &PipelineRun{
-		Id:            uuid.New(),
+		Id:            uuid.New().String(),
 		Status:        PENDING.String(),
 		Repository:    repository,
 		Branch:        branch,

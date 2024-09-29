@@ -13,15 +13,26 @@ import (
 
 var (
 	apiPort string
+	dbHost  string
+	dbPort  string
+	dbUser  string
+	dbPass  string
+	dbName  string
 )
 
 func init() {
 	apiPort = helpers.LoadEnvVariable("API_PORT")
+	dbHost = helpers.LoadEnvVariable("DB_HOST")
+	dbPort = helpers.LoadEnvVariable("DB_PORT")
+	dbUser = helpers.LoadEnvVariable("DB_USER")
+	dbPass = helpers.LoadEnvVariable("DB_PASS")
+	dbName = helpers.LoadEnvVariable("DB_NAME")
 }
 
 func main() {
 	// Initialize Db Connection
-	db.Init("flowforge.db", &pipelineruns.PipelineRun{})
+	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
+	db.Init(dsn, &pipelineruns.PipelineRun{})
 
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()

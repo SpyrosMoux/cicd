@@ -15,7 +15,7 @@ run-local: build run-local-deps
 	go run cmd/main.go
 
 
-run-docker: docker-build run-local-deps
+run-docker: run-local-deps
 	docker compose -f docker-compose.yaml up -d
 
 proxy-webhook: # for local use only
