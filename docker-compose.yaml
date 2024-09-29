@@ -7,11 +7,21 @@ services:
     environment:
       API_PORT: ${API_PORT}
       GH_WEBHOOK_SECRET: ${GH_WEBHOOK_SECRET}
-      GH_TOKEN: ${GH_TOKEN}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       GIN_MODE: release
+      GITHUB_APP_CLIENT_ID: ${GITHUB_APP_CLIENT_ID}
+      GITHUB_APP_PRIVATE_KEY_PATH: ${GITHUB_APP_PRIVATE_KEY_PATH}
+      GITHUB_OAUTH_APP_CLIENT_ID: ${GITHUB_OAUTH_APP_CLIENT_ID}
+      GITHUB_OAUTH_APP_CLIENT_SECRET: ${GITHUB_OAUTH_APP_CLIENT_SECRET}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+    volumes:
+      - ../flowforge-runner.2024-07-04.private-key.pem:/flowforge-runner.2024-07-04.private-key.pem
     ports:
       - "8080:8080"

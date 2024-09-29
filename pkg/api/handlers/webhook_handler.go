@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
+
 	"github.com/spyrosmoux/api/internal/gh"
 	"github.com/spyrosmoux/api/internal/helpers"
 	"github.com/spyrosmoux/api/internal/queue"
@@ -47,7 +49,15 @@ func handlePushEvent(event *github.PushEvent) {
 
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
-		fmt.Println("Publishing pipeline: " + pipeline)
-		queue.PublishJob(pipeline)
+		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
+
+		err := pipelineruns.AddPipelineRun(pipelineRun)
+		if err != nil {
+			log.Printf("Failed to add pipeline run: %v", err)
+			return
+		}
+
+		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
+		queue.PublishJob(pipelineRun.Id, pipeline)
 	}
 }
