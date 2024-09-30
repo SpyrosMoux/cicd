@@ -24,10 +24,10 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status Status) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	dto := StatusDto{
+	dto := pipelineruns.StatusDto{
 		Status: status.String(),
 	}
 
