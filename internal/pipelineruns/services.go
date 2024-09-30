@@ -1,7 +1,6 @@
 package pipelineruns
 
 import (
-	"github.com/spyrosmoux/api/pkg/pipelineruns"
 	"log"
 
 	"github.com/spyrosmoux/api/internal/db"
@@ -51,7 +50,7 @@ func UpdatePipelineRun(pipelineRunId string, pipelineRun *PipelineRun) (*Pipelin
 	return &savedPipelineRun, nil
 }
 
-func UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*PipelineRun, error) {
+func UpdatePipelineRunStatus(pipelineRunId string, status Status) (*PipelineRun, error) {
 	var savedPipelineRun PipelineRun
 	result := db.DB.Where("id = ?", pipelineRunId).First(&savedPipelineRun)
 	if result.Error != nil {

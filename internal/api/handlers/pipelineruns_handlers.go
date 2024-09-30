@@ -3,7 +3,6 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/api/internal/pipelineruns"
-	PipelineRuns "github.com/spyrosmoux/api/pkg/pipelineruns"
 	"log"
 	"net/http"
 )
@@ -36,13 +35,13 @@ func UpdatePipelineRun(c *gin.Context) {
 func UpdatePipelineRunStatus(c *gin.Context) {
 	runId := c.Param("id")
 
-	var statusStr PipelineRuns.StatusDto
+	var statusStr pipelineruns.StatusDto
 	err := c.ShouldBindJSON(&statusStr)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	status, err := PipelineRuns.ParseStatus(statusStr.Status)
+	status, err := pipelineruns.ParseStatus(statusStr.Status)
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
