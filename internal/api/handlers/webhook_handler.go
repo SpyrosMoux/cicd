@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
+	"github.com/spyrosmoux/api/internal/pipelineruns"
 
 	"github.com/spyrosmoux/api/internal/gh"
 	"github.com/spyrosmoux/api/internal/helpers"

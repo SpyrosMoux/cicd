@@ -80,3 +80,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  web:
+    image: github.com/spyrosmoux/flowforge-web
+    ports:
+      - "3000:80"

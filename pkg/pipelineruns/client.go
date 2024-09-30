@@ -1,4 +1,4 @@
-package sdk
+package pipelineruns
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
+	"github.com/spyrosmoux/api/internal/pipelineruns"
 )
 
 type Client struct {
@@ -24,10 +24,10 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status Status) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	dto := pipelineruns.StatusDto{
+	dto := StatusDto{
 		Status: status.String(),
 	}
 
