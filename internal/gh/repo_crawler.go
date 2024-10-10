@@ -97,18 +97,3 @@ func downloadYAMLContent(downloadUrl string, installationId int64) ([]byte, erro
 
 	return body, nil
 }
-
-// TODO(spyrosmoux) change name to something more appropreate
-// ShouldThisRun checks the triggers specified in the pipeline against the supported events
-// A range of events could trigger a pipeline. i.e push a new branch, make a commit
-// For now we only support push events
-// These events should be matched as follows
-// - If a commit is made to the specified branch -> run
-// - If a branch is created, and specified in the triggers -> run
-// - If a tag is create, and the tag is specified in the trigges -> run
-// Apart from creating stuff the push event also represents deletion events. Such as deleting a tag or branch.
-// These events should be ignored
-func ShouldThisRun(event interface{}, triggers models.Triggers) error {
-	//TODO(spyrosmoux) implement me
-	panic("implement me")
-}
