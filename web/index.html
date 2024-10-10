@@ -1,90 +1,92 @@
 <!doctype html>
 <html>
-<head>
-  <title>Job Status Dashboard</title>
-  <style>
-    table {
-      width: 50%;
-      margin: 20px;
-      border-collapse: collapse;
-    }
+    <head>
+        <title>Job Status Dashboard</title>
+        <style>
+            table {
+                width: 50%;
+                margin: 20px;
+                border-collapse: collapse;
+            }
 
-    table,
-    th,
-    td {
-      border: 1px solid black;
-    }
+            table,
+            th,
+            td {
+                border: 1px solid black;
+            }
 
-    th,
-    td {
-      padding: 10px;
-      text-align: left;
-    }
-  </style>
-</head>
-<body>
-<h1>Job Status Dashboard</h1>
-<table>
-  <thead>
-  <tr>
-    <th>Job ID</th>
-    <th>Status</th>
-    <th>Repository</th>
-    <th>Branch</th>
-    <th>Time Triggered</th>
-    <th>Time Started</th>
-    <th>Time Ended</th>
-  </tr>
-  </thead>
-  <tbody id="job-list"></tbody>
-</table>
+            th,
+            td {
+                padding: 10px;
+                text-align: left;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Job Status Dashboard</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Job ID</th>
+                    <th>Run ID</th>
+                    <th>Status</th>
+                    <th>Repository</th>
+                    <th>Branch</th>
+                    <th>Time Triggered</th>
+                    <th>Time Started</th>
+                    <th>Time Ended</th>
+                </tr>
+            </thead>
+            <tbody id="job-list"></tbody>
+        </table>
 
-<script>
-  function fetchJobs() {
-    fetch("http://localhost:8080/runs")
-      .then((response) => response.json())
-      .then((data) => {
-        let jobList = document.getElementById("job-list");
-        jobList.innerHTML = "";
+        <script>
+            function fetchJobs() {
+                fetch("http://localhost:8080/runs")
+                    .then((response) => response.json())
+                    .then((data) => {
+                        let jobList = document.getElementById("job-list");
+                        jobList.innerHTML = "";
 
-        data.forEach((job) => {
-          let row = document.createElement("tr");
+                        data.forEach((job) => {
+                            let row = document.createElement("tr");
 
-          let idCell = document.createElement("td");
-          idCell.innerText = job.id;
-          row.appendChild(idCell);
+                            let idCell = document.createElement("td");
+                            idCell.innerText = job.id;
+                            row.appendChild(idCell);
 
-          let statusCell = document.createElement("td");
-          statusCell.innerText = job.status;
-          row.appendChild(statusCell);
+                            let statusCell = document.createElement("td");
+                            statusCell.innerText = job.status;
+                            row.appendChild(statusCell);
 
-          let repoCell = document.createElement("td");
-          repoCell.innerText = job.repository;
-          row.appendChild(repoCell);
+                            let repoCell = document.createElement("td");
+                            repoCell.innerText = job.repository;
+                            row.appendChild(repoCell);
 
-          let branchCell = document.createElement("td");
-          branchCell.innerText = job.branch;
-          row.appendChild(branchCell);
+                            let branchCell = document.createElement("td");
+                            branchCell.innerText = job.branch;
+                            row.appendChild(branchCell);
 
-          let timeTriggeredCell = document.createElement("td");
-          timeTriggeredCell.innerText = job.timeTriggered;
-          row.appendChild(timeTriggeredCell);
+                            let timeTriggeredCell =
+                                document.createElement("td");
+                            timeTriggeredCell.innerText = job.timeTriggered;
+                            row.appendChild(timeTriggeredCell);
 
-          let timeStartedCell = document.createElement("td");
-          timeStartedCell.innerText = job.timeStarted;
-          row.appendChild(timeStartedCell);
+                            let timeStartedCell = document.createElement("td");
+                            timeStartedCell.innerText = job.timeStarted;
+                            row.appendChild(timeStartedCell);
 
-          let timeEndedCell = document.createElement("td");
-          timeEndedCell.innerText = job.timeEnded;
-          row.appendChild(timeEndedCell);
+                            let timeEndedCell = document.createElement("td");
+                            timeEndedCell.innerText = job.timeEnded;
+                            row.appendChild(timeEndedCell);
 
-          jobList.appendChild(row);
-        });
-      });
-  }
+                            jobList.appendChild(row);
+                        });
+                    });
+            }
 
-  // Fetch jobs every 5 seconds
-  setInterval(fetchJobs, 5000);
-</script>
-</body>
+            // Fetch jobs every 5 seconds
+            setInterval(fetchJobs, 5000);
+        </script>
+    </body>
 </html>

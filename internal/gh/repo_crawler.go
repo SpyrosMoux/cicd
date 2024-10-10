@@ -14,7 +14,8 @@ import (
 
 // FetchPipelineConfig scans a given repo for valid pipeline yamls in the '.flowforge' directory and returns an array with
 // all the valid yamls.
-func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]string, error) {
+// TODO(spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
+func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]models.UnifiedCI, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 		return nil, err
 	}
 
-	var validYAMLs []string
+	var validYAMLs []models.UnifiedCI
 
 	for _, file := range contents {
 		fmt.Printf("Found file: %s\n", file.GetName())
@@ -50,7 +51,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 			return nil, err
 		}
 
-		_, err = models.ValidateYAMLStructure([]byte(fileContent))
+		pipeline, err := models.ValidateYAMLStructure([]byte(fileContent))
 		if err != nil {
 			// TODO(spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
 			// skip for now
@@ -58,17 +59,10 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 			continue // skip to next pipeline
 		}
 
-		// TODO(spyrosmoux) check if yaml has trigger of type same as eventType
-
-		validYAMLs = append(validYAMLs, string(fileContent))
+		validYAMLs = append(validYAMLs, pipeline)
 	}
 
 	return validYAMLs, nil
-}
-
-func validatePipelineTrigger(trigger string) error {
-	//TODO(spyrosmoux) implement me
-	panic("implement me")
 }
 
 // downloadYAMLContent downloads the content of a given raw GitHub url
@@ -102,4 +96,19 @@ func downloadYAMLContent(downloadUrl string, installationId int64) ([]byte, erro
 	}
 
 	return body, nil
+}
+
+// TODO(spyrosmoux) change name to something more appropreate
+// ShouldThisRun checks the triggers specified in the pipeline against the supported events
+// A range of events could trigger a pipeline. i.e push a new branch, make a commit
+// For now we only support push events
+// These events should be matched as follows
+// - If a commit is made to the specified branch -> run
+// - If a branch is created, and specified in the triggers -> run
+// - If a tag is create, and the tag is specified in the trigges -> run
+// Apart from creating stuff the push event also represents deletion events. Such as deleting a tag or branch.
+// These events should be ignored
+func ShouldThisRun(event interface{}, triggers models.Triggers) error {
+	//TODO(spyrosmoux) implement me
+	panic("implement me")
 }
