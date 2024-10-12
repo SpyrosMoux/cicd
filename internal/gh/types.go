@@ -1,12 +1,13 @@
 package gh
 
 import (
+	"errors"
 	"fmt"
-	"log"
-
 	"github.com/google/go-github/github"
 	"github.com/spyrosmoux/api/internal/pipelineruns"
 	"github.com/spyrosmoux/api/internal/queue"
+	"log"
+	"strings"
 )
 
 type PushEventAdapter struct {
@@ -52,13 +53,37 @@ func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 // Apart from creating stuff the push event also represents deletion events. Such as deleting a tag or branch.
 // These events should be ignored
 func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
+	branchName, err := getBranchNameFromRef(event.GetRef())
+	if err != nil {
+		log.Printf("Failed to get branch name from ref %s: %v", event.GetRef(), err)
+		return false
+	}
+
 	shouldRun := false
 	for _, branch := range branches {
-		if event.GetRef() == branch {
+		if branch == "*" {
+			shouldRun = true
+			break
+		}
+
+		if branchName == branch {
 			fmt.Printf("Matching push event for branch %s\n", branch)
 			shouldRun = true
 		}
 	}
 
 	return shouldRun
+}
+
+func getBranchNameFromRef(ref string) (string, error) {
+	if !strings.Contains(ref, "refs/heads/") {
+		return "", errors.New("ref does not contain refs/heads/")
+	}
+
+	parts := strings.SplitAfter(ref, "refs/heads/")
+	if len(parts) != 2 {
+		return "", errors.New("error getting branch name from ref " + ref)
+	}
+
+	return parts[1], nil
 }
