@@ -8,16 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Status int
-
-const (
-	PENDING Status = iota
-	RUNNING
-	CANCELED
-	FAILED
-	COMPLETED
-)
-
 type PipelineRun struct {
 	Id            string `json:"id" gorm:"primary_key"`
 	Status        string `json:"status"`
@@ -40,9 +30,15 @@ func NewPipelineRun(repository, branch string) *PipelineRun {
 	}
 }
 
-type StatusDto struct {
-	Status string `json:"status"`
-}
+type Status int
+
+const (
+	PENDING Status = iota
+	RUNNING
+	CANCELED
+	FAILED
+	COMPLETED
+)
 
 func (s Status) String() string {
 	switch s {
@@ -76,4 +72,8 @@ func ParseStatus(statusStr string) (Status, error) {
 	default:
 		return 0, errors.New("invalid status")
 	}
+}
+
+type StatusDto struct {
+	Status string `json:"status"`
 }

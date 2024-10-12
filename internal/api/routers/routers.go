@@ -3,7 +3,7 @@ package routers
 import (
 	"net/http"
 
-	"github.com/spyrosmoux/api/pkg/api/handlers"
+	"github.com/spyrosmoux/api/internal/api/handlers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

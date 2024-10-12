@@ -1,13 +1,14 @@
-package sdk
+package pipelineruns
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
-	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
+	"github.com/spyrosmoux/api/internal/pipelineruns"
 )
 
 type Client struct {
@@ -24,11 +25,17 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status pipelineruns.Status) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
+	parsedStatus, err := pipelineruns.ParseStatus(status)
+	if err != nil {
+		log.Printf("Failed to parse status from pipeline run %s: %s", pipelineRunId, err)
+		return nil, err
+	}
+
 	dto := pipelineruns.StatusDto{
-		Status: status.String(),
+		Status: parsedStatus.String(),
 	}
 
 	payload, err := json.Marshal(dto)

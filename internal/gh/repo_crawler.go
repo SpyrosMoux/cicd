@@ -14,7 +14,8 @@ import (
 
 // FetchPipelineConfig scans a given repo for valid pipeline yamls in the '.flowforge' directory and returns an array with
 // all the valid yamls.
-func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]string, error) {
+// TODO(spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
+func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]models.UnifiedCI, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 		return nil, err
 	}
 
-	var validYAMLs []string
+	var validYAMLs []models.UnifiedCI
 
 	for _, file := range contents {
 		fmt.Printf("Found file: %s\n", file.GetName())
@@ -50,27 +51,21 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 			return nil, err
 		}
 
-		_, err = models.ValidateYAMLStructure([]byte(fileContent))
+		pipeline, err := models.ValidateYAMLStructure([]byte(fileContent))
 		if err != nil {
 			// TODO(spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
+			// skip for now
 			fmt.Println(err.Error())
 			continue // skip to next pipeline
 		}
 
-		// TODO(spyrosmoux) check if yaml has trigger of type same as eventType
-
-		validYAMLs = append(validYAMLs, string(fileContent))
+		validYAMLs = append(validYAMLs, pipeline)
 	}
 
 	return validYAMLs, nil
 }
 
-func validatePipelineTrigger(trigger string) error {
-	//TODO(spyrosmoux) implement me
-	panic("implement me")
-}
-
-// downloadYAMLContent downloads the content of a given raw github url
+// downloadYAMLContent downloads the content of a given raw GitHub url
 func downloadYAMLContent(downloadUrl string, installationId int64) ([]byte, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {

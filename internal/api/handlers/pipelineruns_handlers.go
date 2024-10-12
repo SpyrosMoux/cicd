@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/spyrosmoux/api/pkg/business/pipelineruns"
+	"github.com/spyrosmoux/api/internal/pipelineruns"
 	"log"
 	"net/http"
 )

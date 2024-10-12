@@ -14,7 +14,6 @@ run-local-deps:
 run-local: build run-local-deps
 	go run cmd/main.go
 
-
 run-docker: run-local-deps
 	docker compose -f docker-compose.yaml up -d
 
