@@ -54,7 +54,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 		pipeline, err := models.ValidateYAMLStructure([]byte(fileContent))
 		if err != nil {
 			// TODO(spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
-			// skip for now
+			// skipping invalid yaml for now
 			fmt.Println(err.Error())
 			continue // skip to next pipeline
 		}
