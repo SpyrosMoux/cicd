@@ -1,14 +1,13 @@
 package main
 
 import (
-	"github.com/spyrosmoux/api/internal/db"
-	"github.com/spyrosmoux/api/internal/pipelineruns"
+	"github.com/spyrosmoux/cicd/api/db"
+	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/api/routers"
+	"github.com/spyrosmoux/cicd/api/supertokens"
+	"github.com/spyrosmoux/cicd/common/helpers"
+	"github.com/spyrosmoux/cicd/common/queue"
 	"log"
-
-	"github.com/spyrosmoux/api/internal/api/routers"
-	"github.com/spyrosmoux/api/internal/helpers"
-	"github.com/spyrosmoux/api/internal/queue"
-	"github.com/spyrosmoux/api/internal/supertokens"
 )
 
 var (

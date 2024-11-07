@@ -7,10 +7,9 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/spyrosmoux/api/internal/pipelineruns"
 )
 
+// Client acts as an SDK so the Runner can communicate with the API
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
@@ -25,16 +24,16 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	parsedStatus, err := pipelineruns.ParseStatus(status)
+	parsedStatus, err := ParseStatus(status)
 	if err != nil {
 		log.Printf("Failed to parse status from pipeline run %s: %s", pipelineRunId, err)
 		return nil, err
 	}
 
-	dto := pipelineruns.StatusDto{
+	dto := StatusDto{
 		Status: parsedStatus.String(),
 	}
 
@@ -60,7 +59,7 @@ func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*
 	}
 
 	// Decode the response body into a User struct
-	var updatedPipelineRun pipelineruns.PipelineRun
+	var updatedPipelineRun PipelineRun
 	if err := json.NewDecoder(resp.Body).Decode(&updatedPipelineRun); err != nil {
 		return nil, err
 	}

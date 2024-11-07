@@ -1,10 +1,12 @@
 package queue
 
 import (
+	"github.com/spyrosmoux/cicd/common/helpers"
 	"log"
+	"log/slog"
+	"os"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/spyrosmoux/api/internal/helpers"
 )
 
 var (
@@ -57,4 +59,51 @@ func PublishJob(pipelineRunId string, body string) {
 	if err != nil {
 		log.Fatalf("Failed to publish a message: %v", err)
 	}
+}
+
+// InitRabbitMQRunner initializes the connection to RabbitMQ for the Runner
+func InitRabbitMQRunner() <-chan amqp.Delivery {
+	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
+	if err != nil {
+		slog.Error("Failed to connect to RabbitMQ " + err.Error())
+		os.Exit(1)
+	}
+
+	ch, err := conn.Channel()
+	if err != nil {
+		slog.Error("Failed to open a channel: " + err.Error())
+	}
+
+	q, err := ch.QueueDeclare(
+		"jobs",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		slog.Error("Failed to declare a queue: " + err.Error())
+	}
+
+	// Set QoS (Quality of Service) to prefetch 1 message at a time
+	err = ch.Qos(1, 0, false)
+	if err != nil {
+		slog.Error("Failed to set QoS: " + err.Error())
+	}
+
+	msgs, err := ch.Consume(
+		q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		slog.Error("Failed to register a consumer: " + err.Error())
+	}
+
+	return msgs
 }

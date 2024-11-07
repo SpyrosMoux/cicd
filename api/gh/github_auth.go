@@ -3,13 +3,12 @@ package gh
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/spyrosmoux/cicd/common/helpers"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/spyrosmoux/api/internal/helpers"
 
 	"github.com/golang-jwt/jwt/v5"
 )

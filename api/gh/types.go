@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/go-github/github"
-	"github.com/spyrosmoux/api/internal/pipelineruns"
-	"github.com/spyrosmoux/api/internal/queue"
+	pipelineruns2 "github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/common/queue"
+	"gopkg.in/yaml.v3"
 	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -26,21 +28,27 @@ func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
-		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
+		pipelineRun := pipelineruns2.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
 		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
 			fmt.Printf("No matching push event for branch %s\n", *event.Ref)
 			continue
 		}
 
-		err := pipelineruns.AddPipelineRun(pipelineRun)
+		err := pipelineruns2.AddPipelineRun(pipelineRun)
 		if err != nil {
 			log.Printf("Failed to add pipeline run: %v", err)
 			return
 		}
 
+		pipelineAsString, err := yaml.Marshal(pipeline)
+		if err != nil {
+			slog.Error("Unable to convert pipeline yaml to string")
+			return
+		}
+
 		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
-		queue.PublishJob(pipelineRun.Id, fmt.Sprintf("%v", pipeline))
+		queue.PublishJob(pipelineRun.Id, fmt.Sprintf("%v", pipelineAsString))
 	}
 }
 

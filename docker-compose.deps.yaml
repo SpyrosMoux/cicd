@@ -16,36 +16,6 @@ services:
       - "5672:5672"
       - "15672:15672"
 
-  core-engine:
-    container_name: core-engine
-    image: ghcr.io/spyrosmoux/core-engine
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      API_BASE_URL: ${API_BASE_URL}
-      GIN_MODE: release
-    depends_on:
-      - rabbitmq
-    volumes:
-      - /var/run/docker.sock.raw:/var/run/docker.sock
-
-  core-engine-02:
-    container_name: core-engine-02
-    image: ghcr.io/spyrosmoux/core-engine
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      API_BASE_URL: ${API_BASE_URL}
-      GIN_MODE: release
-    depends_on:
-      - rabbitmq
-    volumes:
-      - /var/run/docker.sock.raw:/var/run/docker.sock
-
   # Note: If you are assigning a custom name to your db service on the line below, make sure it does not contain underscores
   supertokens-db:
     image: "postgres:latest"
@@ -58,7 +28,7 @@ services:
       - 5432:5432
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "supertokens_user", "-d", "supertokens"]
+      test: [ "CMD", "pg_isready", "-U", "supertokens_user", "-d", "supertokens" ]
       interval: 5s
       timeout: 5s
       retries: 5

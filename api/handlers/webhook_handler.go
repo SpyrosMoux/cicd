@@ -1,11 +1,10 @@
 package handlers
 
 import (
+	"github.com/spyrosmoux/cicd/api/gh"
+	"github.com/spyrosmoux/cicd/common/helpers"
 	"log"
 	"net/http"
-
-	"github.com/spyrosmoux/api/internal/gh"
-	"github.com/spyrosmoux/api/internal/helpers"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/github"

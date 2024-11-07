@@ -1,9 +1,8 @@
 package routers
 
 import (
+	handlers2 "github.com/spyrosmoux/cicd/api/handlers"
 	"net/http"
-
-	"github.com/spyrosmoux/api/internal/api/handlers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -36,10 +35,10 @@ func SetupRouter() *gin.Engine {
 		c.Abort()
 	})
 
-	router.POST("/webhook", handlers.HandleWebhook)
-	router.GET("/runs", handlers.HandleGetPipelineRuns)
-	router.POST("/runs/:id", handlers.UpdatePipelineRun) // TODO(spyrosmoux) this should be PUT
-	router.PUT("/runs/:id", handlers.UpdatePipelineRunStatus)
+	router.POST("/webhook", handlers2.HandleWebhook)
+	router.GET("/runs", handlers2.HandleGetPipelineRuns)
+	router.POST("/runs/:id", handlers2.UpdatePipelineRun) // TODO(spyrosmoux) this should be PUT
+	router.PUT("/runs/:id", handlers2.UpdatePipelineRunStatus)
 
 	return router
 }
