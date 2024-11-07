@@ -1,9 +1,8 @@
 package pipelineruns
 
 import (
+	"github.com/spyrosmoux/cicd/api/db"
 	"log"
-
-	"github.com/spyrosmoux/api/internal/db"
 )
 
 func GetPipelineRuns() (*[]PipelineRun, error) {

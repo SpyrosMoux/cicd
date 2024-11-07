@@ -1,9 +1,8 @@
 package routers
 
 import (
+	"github.com/spyrosmoux/cicd/api/handlers"
 	"net/http"
-
-	"github.com/spyrosmoux/api/internal/api/handlers"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

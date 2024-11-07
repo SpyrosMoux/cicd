@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"io"
 	"net/http"
 
 	"github.com/google/go-github/github"
-	"github.com/spyrosmoux/core-engine/pkg/models"
 	"golang.org/x/oauth2"
 )
 
 // FetchPipelineConfig scans a given repo for valid pipeline yamls in the '.flowforge' directory and returns an array with
 // all the valid yamls.
 // TODO(spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
-func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]models.UnifiedCI, error) {
+func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 		return nil, err
 	}
 
-	var validYAMLs []models.UnifiedCI
+	var validYAMLs []pipelines.Pipeline
 
 	for _, file := range contents {
 		fmt.Printf("Found file: %s\n", file.GetName())
@@ -51,10 +51,10 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 			return nil, err
 		}
 
-		pipeline, err := models.ValidateYAMLStructure([]byte(fileContent))
+		pipeline, err := pipelines.ValidateYAMLStructure([]byte(fileContent))
 		if err != nil {
 			// TODO(spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
-			// skip for now
+			// skipping invalid yaml for now
 			fmt.Println(err.Error())
 			continue // skip to next pipeline
 		}
