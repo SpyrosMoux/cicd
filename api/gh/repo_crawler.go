@@ -15,7 +15,7 @@ import (
 // FetchPipelineConfig scans a given repo for valid pipeline yamls in the '.flowforge' directory and returns an array with
 // all the valid yamls.
 // TODO(spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
-func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.UnifiedCI, error) {
+func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 		return nil, err
 	}
 
-	var validYAMLs []pipelines.UnifiedCI
+	var validYAMLs []pipelines.Pipeline
 
 	for _, file := range contents {
 		fmt.Printf("Found file: %s\n", file.GetName())

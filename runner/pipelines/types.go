@@ -24,41 +24,41 @@ type Triggers struct {
 	PR     []string `yaml:"pr,omitempty"`
 }
 
-// UnifiedCI represents the top-level structure containing jobs
-type UnifiedCI struct {
+// Pipeline represents the top-level structure containing jobs
+type Pipeline struct {
 	Triggers  Triggers          `yaml:"triggers,omitempty"`
 	Variables map[string]string `yaml:"variables,omitempty"`
 	Jobs      []Job             `yaml:"jobs"`
 }
 
 // ValidateYAMLStructure validates the structure of a given YAML content.
-func ValidateYAMLStructure(yamlData []byte) (UnifiedCI, error) {
-	// Parse YAML data into UnifiedCI struct
-	var ci UnifiedCI
+func ValidateYAMLStructure(yamlData []byte) (Pipeline, error) {
+	// Parse YAML data into Pipeline struct
+	var ci Pipeline
 	err := yaml.Unmarshal(yamlData, &ci)
 	if err != nil {
-		return UnifiedCI{}, fmt.Errorf("error unmarshalling YAML: %w", err)
+		return Pipeline{}, fmt.Errorf("error unmarshalling YAML: %w", err)
 	}
 
 	// Perform validation checks
 	if len(ci.Jobs) == 0 {
-		return UnifiedCI{}, errors.New("no jobs defined in the YAML")
+		return Pipeline{}, errors.New("no jobs defined in the YAML")
 	}
 
 	for _, job := range ci.Jobs {
 		if job.Name == "" {
-			return UnifiedCI{}, errors.New("job name is required")
+			return Pipeline{}, errors.New("job name is required")
 		}
 		if len(job.Steps) == 0 {
-			return UnifiedCI{}, fmt.Errorf("job '%s' has no steps defined", job.Name)
+			return Pipeline{}, fmt.Errorf("job '%s' has no steps defined", job.Name)
 		}
 
 		for _, step := range job.Steps {
 			if step.Name == "" {
-				return UnifiedCI{}, fmt.Errorf("step in job '%s' is missing a name", job.Name)
+				return Pipeline{}, fmt.Errorf("step in job '%s' is missing a name", job.Name)
 			}
 			if step.Run == "" {
-				return UnifiedCI{}, fmt.Errorf("step '%s' in job '%s' is missing a run command", step.Name, job.Name)
+				return Pipeline{}, fmt.Errorf("step '%s' in job '%s' is missing a run command", step.Name, job.Name)
 			}
 		}
 
@@ -72,7 +72,7 @@ func ValidateYAMLStructure(yamlData []byte) (UnifiedCI, error) {
 				}
 			}
 			if !found {
-				return UnifiedCI{}, fmt.Errorf("job '%s' has an undefined dependency '%s'", job.Name, need)
+				return Pipeline{}, fmt.Errorf("job '%s' has an undefined dependency '%s'", job.Name, need)
 			}
 		}
 	}
