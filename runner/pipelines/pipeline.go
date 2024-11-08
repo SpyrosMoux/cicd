@@ -72,18 +72,12 @@ func CleanupRun() {
 }
 
 // RunPipeline prepares, executes and cleans-up a run
-func RunPipeline(job string) error {
-	ci, err := ValidateYAMLStructure([]byte(job))
-	if err != nil {
-		slog.Error("Error validating yaml structure with error: " + err.Error())
-		return err
-	}
-
+func RunPipeline(pipeline Pipeline) error {
 	PrepareRun()
 
-	for _, job := range ci.Jobs {
+	for _, job := range pipeline.Jobs {
 		slog.Info("Running job: " + job.Name)
-		err := ExecuteJob(job, ci.Variables)
+		err := ExecuteJob(job, pipeline.Variables)
 		if err != nil {
 			CleanupRun()
 			slog.Error("Error executing job: " + err.Error())

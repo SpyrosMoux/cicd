@@ -43,7 +43,7 @@ func InitRabbitMQ() {
 	}
 }
 
-func PublishJob(pipelineRunId string, body string) {
+func PublishJob(pipelineRunId string, body []byte) {
 	err := channel.Publish(
 		"",
 		"jobs",
@@ -51,7 +51,7 @@ func PublishJob(pipelineRunId string, body string) {
 		false,
 		amqp.Publishing{
 			ContentType:   "text/plain",
-			Body:          []byte(body),
+			Body:          body,
 			DeliveryMode:  amqp.Persistent,
 			CorrelationId: pipelineRunId,
 		},

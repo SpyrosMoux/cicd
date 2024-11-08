@@ -48,7 +48,7 @@ func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 		}
 
 		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
-		queue.PublishJob(pipelineRun.Id, fmt.Sprintf("%v", pipelineAsString))
+		queue.PublishJob(pipelineRun.Id, pipelineAsString)
 	}
 }
 

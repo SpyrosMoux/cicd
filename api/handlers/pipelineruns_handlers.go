@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
-	pipelineruns2 "github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"log"
 	"net/http"
 )
 
 func HandleGetPipelineRuns(c *gin.Context) {
-	runs, err := pipelineruns2.GetPipelineRuns()
+	runs, err := pipelineruns.GetPipelineRuns()
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -20,13 +20,13 @@ func HandleGetPipelineRuns(c *gin.Context) {
 func UpdatePipelineRun(c *gin.Context) {
 	runId := c.Param("id")
 
-	var pipelineRun *pipelineruns2.PipelineRun
+	var pipelineRun *pipelineruns.PipelineRun
 	err := c.ShouldBindJSON(&pipelineRun)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	updatedPipelineRun, err := pipelineruns2.UpdatePipelineRun(runId, pipelineRun)
+	updatedPipelineRun, err := pipelineruns.UpdatePipelineRun(runId, pipelineRun)
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -38,19 +38,19 @@ func UpdatePipelineRun(c *gin.Context) {
 func UpdatePipelineRunStatus(c *gin.Context) {
 	runId := c.Param("id")
 
-	var statusStr pipelineruns2.StatusDto
+	var statusStr pipelineruns.StatusDto
 	err := c.ShouldBindJSON(&statusStr)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	status, err := pipelineruns2.ParseStatus(statusStr.Status)
+	status, err := pipelineruns.ParseStatus(statusStr.Status)
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	updatedPipelineRun, err := pipelineruns2.UpdatePipelineRunStatus(runId, status)
+	updatedPipelineRun, err := pipelineruns.UpdatePipelineRunStatus(runId, status)
 	if err != nil {
 		log.Println(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

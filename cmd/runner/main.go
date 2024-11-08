@@ -5,6 +5,7 @@ import (
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
+	"gopkg.in/yaml.v3"
 	"log/slog"
 )
 
@@ -32,8 +33,14 @@ func main() {
 				slog.Error("Failed to update pipeline with error: " + err.Error())
 			}
 
+			var pipeline pipelines.Pipeline
+			err = yaml.Unmarshal(d.Body, &pipeline)
+			if err != nil {
+				slog.Error(err.Error())
+			}
+
 			runResult := true
-			err = pipelines.RunPipeline(string(d.Body))
+			err = pipelines.RunPipeline(pipeline)
 			if err != nil {
 				runResult = false
 				slog.Error("Failed to run pipeline with error: " + err.Error())
@@ -50,11 +57,11 @@ func main() {
 				if err != nil {
 					slog.Error("Failed to update pipeline with error: " + err.Error())
 				}
-			}
-
-			_, err = client.UpdatePipelineRunStatus(d.CorrelationId, pipelineruns.FAILED.String())
-			if err != nil {
-				slog.Error("Failed to update pipeline with error: " + err.Error())
+			} else {
+				_, err = client.UpdatePipelineRunStatus(d.CorrelationId, pipelineruns.FAILED.String())
+				if err != nil {
+					slog.Error("Failed to update pipeline with error: " + err.Error())
+				}
 			}
 		}
 	}()
