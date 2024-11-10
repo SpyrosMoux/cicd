@@ -140,6 +140,6 @@ services:
     env_file:
       - ../.env.docker
     volumes:
-      - ../../flowforge-runner.2024-07-04.private-key.pem:/
+      - ../../flowforge-runner.2024-07-04.private-key.pem:/gh/flowforge-runner.2024-07-04.private-key.pem
     networks:
       - cicd_net
