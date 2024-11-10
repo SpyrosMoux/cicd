@@ -5,6 +5,8 @@ RUNNER_DIR = cmd/runner
 BUILD_DIR = build
 DOCKER_REPO = ghcr.io/spyrosmoux/cicd
 SMEE_URL = https://smee.io/vgX1mcHUonHXl1Hh
+PLATFORM = linux/amd64
+TAG ?= latest
 
 # Default targets
 .PHONY: build-api build-runner build-all \
@@ -23,12 +25,12 @@ build-all: build-api build-runner
 
 # Docker builds with optional tag argument
 build-api-docker:
-	docker build -t $(DOCKER_REPO)/api:${TAG:=latest} . -f docker/Dockerfile.api
-	docker push $(DOCKER_REPO)/api:${TAG:=latest}
+	docker build -t $(DOCKER_REPO)/api:$(TAG) . -f docker/Dockerfile.api --platform $(PLATFORM)
+	docker push $(DOCKER_REPO)/api:$(TAG)
 
 build-runner-docker:
-	docker build -t $(DOCKER_REPO)/runner:${TAG:=latest} . -f docker/Dockerfile.runner
-	docker push $(DOCKER_REPO)/runner:${TAG:=latest}
+	docker build -t $(DOCKER_REPO)/runner:$(TAG) . -f docker/Dockerfile.runner --platform $(PLATFORM)
+	docker push $(DOCKER_REPO)/runner:$(TAG)
 
 build-all-docker: build-api-docker build-runner-docker
 
