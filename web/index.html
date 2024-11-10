@@ -42,7 +42,7 @@
 
         <script>
             function fetchJobs() {
-                fetch("http://localhost:8080/runs")
+                fetch("http://localhost:8080/api/runs")
                     .then((response) => response.json())
                     .then((data) => {
                         let jobList = document.getElementById("job-list");

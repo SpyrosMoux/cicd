@@ -1,9 +1,0 @@
-services:
-  runner:
-    container_name: runner
-    image: ghcr.io/spyrosmoux/runner
-    build:
-      context: .
-      dockerfile: Dockerfile.runner
-    env_file:
-      - .env.docker

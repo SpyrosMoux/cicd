@@ -35,10 +35,10 @@ func SetupRouter() *gin.Engine {
 		c.Abort()
 	})
 
-	router.POST("/webhook", handlers.HandleWebhook)
-	router.GET("/runs", handlers.HandleGetPipelineRuns)
-	router.POST("/runs/:id", handlers.UpdatePipelineRun) // TODO(spyrosmoux) this should be PUT
-	router.PUT("/runs/:id", handlers.UpdatePipelineRunStatus)
+	router.POST("api/webhook", handlers.HandleWebhook)
+	router.GET("api/runs", handlers.HandleGetPipelineRuns)
+	router.POST("api/runs/:id", handlers.UpdatePipelineRun) // TODO(spyrosmoux) this should be PUT
+	router.PUT("api/runs/:id", handlers.UpdatePipelineRunStatus)
 
 	return router
 }

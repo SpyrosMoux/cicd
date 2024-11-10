@@ -1,0 +1,113 @@
+---
+networks:
+  cicd_net:
+
+services:
+  traefik:
+    image: traefik:2.10.7
+    container_name: traefik
+    restart: unless-stopped
+    volumes:
+      - ${PWD}/traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cicd_net
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.traefik.rule=Host(`vmi2205795.contaboserver.net`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))'
+      - 'traefik.http.routers.traefik.entrypoints=https'
+      - 'traefik.http.routers.traefik.service=api@internal'
+      - 'traefik.http.routers.traefik.tls=true'
+      - 'traefik.http.routers.traefik.tls.certresolver=letsencrypt'
+      - "traefik.http.routers.traefik.middlewares=traefik-strip"
+      - "traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik"
+    ports:
+      - '443:443'
+    command:
+      - '--api'
+      - '--api.dashboard=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedByDefault=false'
+      - '--entrypoints.http=false'
+      - '--entrypoints.http.http.redirections.entrypoint.to=https'
+      - '--entrypoints.http.http.redirections.entrypoint.scheme=https'
+      - '--entrypoints.https=true'
+      - '--entrypoints.https.address=:443'
+      - '--certificatesResolvers.letsencrypt.acme.email=lmitsiogiannis@linkldenterprise.com'
+      - '--certificatesResolvers.letsencrypt.acme.storage=/etc/traefik/acme.json'
+      - '--certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=https'
+      - '--log=true'
+      - '--log.level=INFO'
+
+  api-db:
+    image: postgres
+    container_name: api-db
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-api_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somePassword}
+      POSTGRES_DB: ${POSTGRES_DB:-api}
+    networks:
+      - cicd_net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - cicd_net
+
+  # Note: If you are assigning a custom name to your db service on the line below, make sure it does not contain underscores
+  supertokens-db:
+    image: "postgres:latest"
+    container_name: supertokens-db
+    environment:
+      POSTGRES_USER: supertokens_user
+      POSTGRES_PASSWORD: somePassword
+      POSTGRES_DB: supertokens
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "supertokens_user", "-d", "supertokens" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cicd_net
+
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.0.2
+    container_name: supertokens-core
+    depends_on:
+      supertokens-db:
+        condition: service_healthy
+    ports:
+      - 3567:3567
+    environment:
+      POSTGRESQL_CONNECTION_URI: "postgresql://supertokens_user:somePassword@supertokens-db:5432/supertokens"
+    restart: unless-stopped
+    healthcheck:
+      test: >
+        bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep "Hello"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cicd_net
+
+  web:
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.web.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/`)'
+      - 'traefik.http.routers.web.entrypoints=https'
+      - 'traefik.http.routers.web.tls=true'
+      - 'traefik.http.routers.web.tls.certresolver=letsencrypt'
+    image: ghcr.io/spyrosmoux/flowforge-web
+    ports:
+      - "3000:80"
+    networks:
+      - cicd_net

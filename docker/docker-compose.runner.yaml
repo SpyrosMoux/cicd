@@ -1,0 +1,16 @@
+---
+networks:
+  docker_cicd_net:
+    external: true
+
+services:
+  runner:
+    container_name: runner
+    image: ghcr.io/spyrosmoux/cicd/runner
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.runner
+    env_file:
+      - ../.env.docker
+    networks:
+      - docker_cicd_net
