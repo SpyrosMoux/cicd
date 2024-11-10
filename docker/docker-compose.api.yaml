@@ -1,16 +1,5 @@
----
-networks:
-  docker_cicd_net:
-    external: true
-
 services:
   api:
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/app/cicd/api`)'
-      - 'traefik.http.routers.api.entrypoints=https'
-      - 'traefik.http.routers.api.tls=true'
-      - 'traefik.http.routers.api.tls.certresolver=letsencrypt'
     container_name: api
     image: ghcr.io/spyrosmoux/cicd/api
     build:
@@ -18,5 +7,3 @@ services:
       dockerfile: docker/Dockerfile.api
     env_file:
       - ../.env.docker
-    networks:
-      - docker_cicd_net

@@ -46,6 +46,10 @@ deploy-local-api: deploy-local-deps
 
 deploy-local: deploy-local-deps deploy-local-runner deploy-local-api
 
+deploy-dev-server:
+	docker compose -f docker/docker-compose.dev-server.yaml pull
+	docker compose -f docker/docker-compose.dev-server.yaml up -d
+
 # Proxy webhook for local development
 proxy-webhook:
 	smee -u $(SMEE_URL) -p 8080 -P /api/webhook
