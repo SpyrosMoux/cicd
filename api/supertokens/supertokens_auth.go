@@ -16,7 +16,7 @@ var (
 )
 
 func InitSuperTokens() {
-	apiBasePath := "/api/auth"
+	apiBasePath := "/app/cicd/api/auth"
 	websiteBasePath := "/auth"
 	err := supertokens.Init(supertokens.TypeInput{
 		Supertokens: &supertokens.ConnectionInfo{
