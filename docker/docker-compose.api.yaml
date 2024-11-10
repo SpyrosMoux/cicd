@@ -7,7 +7,7 @@ services:
   api:
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/`)'
+      - 'traefik.http.routers.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/api`)'
       - 'traefik.http.routers.api.entrypoints=https'
       - 'traefik.http.routers.api.tls=true'
       - 'traefik.http.routers.api.tls.certresolver=letsencrypt'
