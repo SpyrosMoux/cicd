@@ -20,7 +20,7 @@ type PushEventAdapter struct {
 }
 
 func (eventAdapter *PushEventAdapter) HandleGhEvent() {
-	// TODO(@spyrosmoux) is there a better way to inject the service?
+	// TODO(@SpyrosMoux) is there a better way to inject the service?
 	repo := repositories.NewPipelineRunsRepository(config.DB)
 	svc := services.NewPipelineRunsService(repo)
 

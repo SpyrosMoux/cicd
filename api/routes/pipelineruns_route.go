@@ -9,7 +9,7 @@ func PipelineRuns(route *gin.Engine, pipelineRunsHandler handlers.PipelineRunsHa
 	routes := route.Group("/app/cicd/api/runs")
 	{
 		routes.GET("", pipelineRunsHandler.HandleGetPipelineRuns)
-		routes.POST("/:id", pipelineRunsHandler.HandleUpdatePipelineRun) // TODO(@spyrosmoux) this should be PUT
+		routes.POST("/:id", pipelineRunsHandler.HandleUpdatePipelineRun) // TODO(@SpyrosMoux) this should be PUT
 		routes.PUT("/:id", pipelineRunsHandler.HandleUpdatePipelineRunStatus)
 	}
 }

@@ -32,7 +32,7 @@ func (h *pipelineRunsHandler) HandleGetPipelineRuns(c *gin.Context) {
 	c.JSON(http.StatusOK, runs)
 }
 
-// TODO(@spyrosmoux) improve logic, separate bussiness logic into service
+// TODO(@SpyrosMoux) improve logic, separate bussiness logic into service
 func (h *pipelineRunsHandler) HandleUpdatePipelineRun(c *gin.Context) {
 	runId := c.Param("id")
 
@@ -51,7 +51,7 @@ func (h *pipelineRunsHandler) HandleUpdatePipelineRun(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedPipelineRun)
 }
 
-// TODO(@spyrosmoux) improve logic, separate bussiness logic into service
+// TODO(@SpyrosMoux) improve logic, separate bussiness logic into service
 func (h *pipelineRunsHandler) HandleUpdatePipelineRunStatus(c *gin.Context) {
 	runId := c.Param("id")
 
