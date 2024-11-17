@@ -14,7 +14,7 @@ import (
 
 // FetchPipelineConfig scans a given repo for valid pipeline yamls in the '.flowforge' directory and returns an array with
 // all the valid yamls.
-// TODO(spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
+// TODO(@spyrosmoux) rewrite this so it makes more sense. Goal is to fetch all pipelines that need to run (FetchTriggeredPipelines???)
 func FetchPipelineConfig(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error) {
 	token, err := GetInstallationToken(installationId)
 	if err != nil {
@@ -53,7 +53,7 @@ func FetchPipelineConfig(repoOwner string, repoName string, branchName string, i
 
 		pipeline, err := pipelines.ValidateYAMLStructure([]byte(fileContent))
 		if err != nil {
-			// TODO(spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
+			// TODO(@spyrosmoux) what happens if a yaml is invalid, and there are multiple yamls in the repo?
 			// skipping invalid yaml for now
 			fmt.Println(err.Error())
 			continue // skip to next pipeline

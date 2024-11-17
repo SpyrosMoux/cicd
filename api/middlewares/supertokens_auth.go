@@ -1,4 +1,4 @@
-package supertokens
+package middlewares
 
 import (
 	"github.com/spyrosmoux/cicd/common/helpers"
@@ -25,7 +25,7 @@ func InitSuperTokens() {
 		},
 		AppInfo: supertokens.AppInfo{
 			AppName:         "FlowForge",
-			APIDomain:       "http://localhost:8080/api", // TODO(spyrosmoux) use env variables
+			APIDomain:       "http://localhost:8080/api", // TODO(@spyrosmoux) use env variables
 			WebsiteDomain:   "http://localhost:3000",
 			APIBasePath:     &apiBasePath,
 			WebsiteBasePath: &websiteBasePath,

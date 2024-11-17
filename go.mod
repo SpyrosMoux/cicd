@@ -10,7 +10,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/rabbitmq/amqp091-go v1.10.0
-	github.com/spyrosmoux/core-engine v0.0.1-rc.0.20241002185154-928c6f5f328f
 	github.com/supertokens/supertokens-golang v0.22.1
 	golang.org/x/oauth2 v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -64,5 +63,4 @@ require (
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 	gopkg.in/h2non/gock.v1 v1.1.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

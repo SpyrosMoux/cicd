@@ -1,55 +1,62 @@
 package gh
 
 import (
-  "errors"
-  "fmt"
-  "github.com/google/go-github/github"
-  "github.com/spyrosmoux/cicd/api/pipelineruns"
-  "github.com/spyrosmoux/cicd/common/queue"
-  "gopkg.in/yaml.v3"
-  "log"
-  "log/slog"
-  "strings"
+	"errors"
+	"fmt"
+	"github.com/google/go-github/github"
+	"github.com/spyrosmoux/cicd/api/config"
+	"github.com/spyrosmoux/cicd/api/entities"
+	"github.com/spyrosmoux/cicd/api/repositories"
+	"github.com/spyrosmoux/cicd/api/services"
+	"github.com/spyrosmoux/cicd/common/queue"
+	"gopkg.in/yaml.v3"
+	"log"
+	"log/slog"
+	"strings"
 )
 
 type PushEventAdapter struct {
-  Event *github.PushEvent
+	Event *github.PushEvent
 }
 
 func (eventAdapter *PushEventAdapter) HandleGhEvent() {
-  event := eventAdapter.Event
+	// TODO(@spyrosmoux) is there a better way to inject the service?
+	repo := repositories.NewPipelineRunsRepository(config.DB)
+	svc := services.NewPipelineRunsService(repo)
 
-  fmt.Printf("Received a push event for ref %s\n", *event.Ref)
+	event := eventAdapter.Event
 
-  pipelines, err := FetchPipelineConfig(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
-  if err != nil {
-    log.Printf("Failed to fetch pipeline config: %v", err)
-  }
+	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-  // Publish all triggered pipelines
-  for _, pipeline := range pipelines {
-    pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
+	pipelines, err := FetchPipelineConfig(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
+	if err != nil {
+		log.Printf("Failed to fetch pipeline config: %v", err)
+	}
 
-    if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
-      fmt.Printf("No matching push event for branch %s\n", *event.Ref)
-      continue
-    }
+	// Publish all triggered pipelines
+	for _, pipeline := range pipelines {
+		pipelineRun := entities.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
-    err := pipelineruns.AddPipelineRun(pipelineRun)
-    if err != nil {
-      log.Printf("Failed to add pipeline run: %v", err)
-      return
-    }
+		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
+			fmt.Printf("No matching push event for branch %s\n", *event.Ref)
+			continue
+		}
 
-    pipelineAsString, err := yaml.Marshal(pipeline)
-    if err != nil {
-      slog.Error("Unable to convert pipeline yaml to string")
-      return
-    }
+		err := svc.AddPipelineRun(pipelineRun)
+		if err != nil {
+			log.Printf("Failed to add pipeline run: %v", err)
+			return
+		}
 
-    fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
-    queue.PublishJob(pipelineRun.Id, pipelineAsString)
-  }
+		pipelineAsString, err := yaml.Marshal(pipeline)
+		if err != nil {
+			slog.Error("Unable to convert pipeline yaml to string")
+			return
+		}
+
+		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
+		queue.PublishJob(pipelineRun.Id, pipelineAsString)
+	}
 }
 
 // A range of events could trigger a pipeline. i.e push a new branch, make a commit
@@ -61,37 +68,37 @@ func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 // Apart from creating stuff the push event also represents deletion events. Such as deleting a tag or branch.
 // These events should be ignored
 func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
-  branchName, err := getBranchNameFromRef(event.GetRef())
-  if err != nil {
-    log.Printf("Failed to get branch name from ref %s: %v", event.GetRef(), err)
-    return false
-  }
+	branchName, err := getBranchNameFromRef(event.GetRef())
+	if err != nil {
+		log.Printf("Failed to get branch name from ref %s: %v", event.GetRef(), err)
+		return false
+	}
 
-  shouldRun := false
-  for _, branch := range branches {
-    if branch == "*" {
-      shouldRun = true
-      break
-    }
+	shouldRun := false
+	for _, branch := range branches {
+		if branch == "*" {
+			shouldRun = true
+			break
+		}
 
-    if branchName == branch {
-      fmt.Printf("Matching push event for branch %s\n", branch)
-      shouldRun = true
-    }
-  }
+		if branchName == branch {
+			fmt.Printf("Matching push event for branch %s\n", branch)
+			shouldRun = true
+		}
+	}
 
-  return shouldRun
+	return shouldRun
 }
 
 func getBranchNameFromRef(ref string) (string, error) {
-  if !strings.Contains(ref, "refs/heads/") {
-    return "", errors.New("ref does not contain refs/heads/")
-  }
+	if !strings.Contains(ref, "refs/heads/") {
+		return "", errors.New("ref does not contain refs/heads/")
+	}
 
-  parts := strings.SplitAfter(ref, "refs/heads/")
-  if len(parts) != 2 {
-    return "", errors.New("error getting branch name from ref " + ref)
-  }
+	parts := strings.SplitAfter(ref, "refs/heads/")
+	if len(parts) != 2 {
+		return "", errors.New("error getting branch name from ref " + ref)
+	}
 
-  return parts[1], nil
+	return parts[1], nil
 }

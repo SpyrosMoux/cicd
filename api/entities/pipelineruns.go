@@ -1,11 +1,10 @@
-package pipelineruns
+package entities
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type PipelineRun struct {

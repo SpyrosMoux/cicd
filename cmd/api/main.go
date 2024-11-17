@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/spyrosmoux/cicd/api/db"
-	"github.com/spyrosmoux/cicd/api/pipelineruns"
-	"github.com/spyrosmoux/cicd/api/routers"
-	"github.com/spyrosmoux/cicd/api/supertokens"
+	"github.com/spyrosmoux/cicd/api/config"
+	"github.com/spyrosmoux/cicd/api/entities"
+	"github.com/spyrosmoux/cicd/api/middlewares"
+	"github.com/spyrosmoux/cicd/api/routes"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"log"
@@ -31,16 +31,16 @@ func init() {
 func main() {
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
-	db.Init(dsn, &pipelineruns.PipelineRun{})
+	config.Init(dsn, &entities.PipelineRun{})
 
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()
 
 	// Initialize SuperTokens
-	supertokens.InitSuperTokens()
+	middlewares.InitSuperTokens()
 
 	// Setup routes
-	router := routers.SetupRouter()
+	router := routes.SetupRouter()
 
 	log.Printf("Starting server on port %s", apiPort)
 	log.Fatal(router.Run(":" + apiPort))

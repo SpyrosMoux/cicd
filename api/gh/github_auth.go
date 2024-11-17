@@ -70,7 +70,7 @@ func GetInstallationToken(installationId int64) (string, error) {
 }
 
 // GenerateJWT generates a JWT token from a given GitHub App private key and pem file.
-// TODO(spyrosmoux) should return error instead of fatalling
+// TODO(@spyrosmoux) should return error instead of fatalling
 func GenerateJWT() string {
 	pemFileData, err := os.ReadFile(ghAppPrivateKey)
 	if err != nil {
