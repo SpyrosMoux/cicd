@@ -1,13 +1,14 @@
 package services
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/cicd/api/entities"
 	"github.com/spyrosmoux/cicd/api/repositories"
 )
 
 type PipelineRunsService interface {
 	GetPipelineRuns() (*[]entities.PipelineRun, error)
-	UpdatePipelineRun(runId string, run *entities.PipelineRun) (*entities.PipelineRun, error)
+	UpdatePipelineRun(ctx *gin.Context) (*entities.PipelineRun, error)
 	UpdatePipelineRunStatus(runId string, status *entities.Status) (*entities.PipelineRun, error)
 	AddPipelineRun(run *entities.PipelineRun) error
 }
@@ -28,7 +29,15 @@ func (svc *pipelineRunsService) GetPipelineRuns() (*[]entities.PipelineRun, erro
 	return pipelineRuns, nil
 }
 
-func (svc *pipelineRunsService) UpdatePipelineRun(runId string, run *entities.PipelineRun) (*entities.PipelineRun, error) {
+func (svc *pipelineRunsService) UpdatePipelineRun(ctx *gin.Context) (*entities.PipelineRun, error) {
+	runId := ctx.Param("id")
+
+	var run *entities.PipelineRun
+	err := ctx.ShouldBindJSON(&run)
+	if err != nil {
+		return nil, err
+	}
+
 	savedRun, err := svc.repo.FindById(runId)
 	if err != nil {
 		return nil, err
