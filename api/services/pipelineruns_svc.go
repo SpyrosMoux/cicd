@@ -9,7 +9,7 @@ import (
 type PipelineRunsService interface {
 	GetPipelineRuns() (*[]entities.PipelineRun, error)
 	UpdatePipelineRun(ctx *gin.Context) (*entities.PipelineRun, error)
-	UpdatePipelineRunStatus(runId string, status *entities.Status) (*entities.PipelineRun, error)
+	UpdatePipelineRunStatus(ctx *gin.Context) (*entities.PipelineRun, error)
 	AddPipelineRun(run *entities.PipelineRun) error
 }
 
@@ -58,7 +58,20 @@ func (svc *pipelineRunsService) UpdatePipelineRun(ctx *gin.Context) (*entities.P
 	return updatedRun, nil
 }
 
-func (svc *pipelineRunsService) UpdatePipelineRunStatus(runId string, status *entities.Status) (*entities.PipelineRun, error) {
+func (svc *pipelineRunsService) UpdatePipelineRunStatus(ctx *gin.Context) (*entities.PipelineRun, error) {
+	runId := ctx.Param("id")
+
+	var statusStr entities.StatusDto
+	err := ctx.ShouldBindJSON(&statusStr)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := entities.ParseStatus(statusStr.Status)
+	if err != nil {
+		return nil, err
+	}
+
 	savedRun, err := svc.repo.FindById(runId)
 	if err != nil {
 		return nil, err
