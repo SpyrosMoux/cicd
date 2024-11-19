@@ -18,7 +18,7 @@ var (
 	rabbitmqPort     = helpers.LoadEnvVariable("RABBITMQ_PORT")
 )
 
-// TODO(spyrosmoux) rename to InitRabbitMQPublisher and make any changes if necessary to generify this
+// TODO(@SpyrosMoux) rename to InitRabbitMQPublisher and make any changes if necessary to generify this
 func InitRabbitMQ() {
 	var err error
 	conn, err = amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
@@ -63,7 +63,7 @@ func PublishJob(pipelineRunId string, body []byte) {
 }
 
 // InitRabbitMQRunner initializes the connection to RabbitMQ for the Runner
-// TODO(spyrosmoux) rename to InitRabbitMQConsumer and make any changes if necessary to generify this
+// TODO(@SpyrosMoux) rename to InitRabbitMQConsumer and make any changes if necessary to generify this
 func InitRabbitMQRunner() <-chan amqp.Delivery {
 	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
 	if err != nil {

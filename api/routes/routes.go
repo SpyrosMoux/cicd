@@ -1,7 +1,10 @@
-package routers
+package routes
 
 import (
+	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/handlers"
+	"github.com/spyrosmoux/cicd/api/repositories"
+	"github.com/spyrosmoux/cicd/api/services"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
@@ -35,10 +38,12 @@ func SetupRouter() *gin.Engine {
 		c.Abort()
 	})
 
+	pipelineRunsRepo := repositories.NewPipelineRunsRepository(config.DB)
+	pipelineRunsSvc := services.NewPipelineRunsService(pipelineRunsRepo)
+	pipelineRunsHandler := handlers.NewPipelineRunsHandler(pipelineRunsSvc)
+
+	PipelineRuns(router, pipelineRunsHandler)
 	router.POST("app/cicd/api/webhook", handlers.HandleWebhook)
-	router.GET("app/cicd/api/runs", handlers.HandleGetPipelineRuns)
-	router.POST("app/cicd/api/runs/:id", handlers.UpdatePipelineRun) // TODO(spyrosmoux) this should be PUT
-	router.PUT("app/cicd/api/runs/:id", handlers.UpdatePipelineRunStatus)
 
 	return router
 }
