@@ -32,23 +32,14 @@ func (h *pipelineRunsHandler) HandleGetPipelineRuns(c *gin.Context) {
 	c.JSON(http.StatusOK, runs)
 }
 
-// TODO(@SpyrosMoux) improve logic, separate bussiness logic into service
-func (h *pipelineRunsHandler) HandleUpdatePipelineRun(c *gin.Context) {
-	runId := c.Param("id")
-
-	var pipelineRun *entities.PipelineRun
-	err := c.ShouldBindJSON(&pipelineRun)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-
-	updatedPipelineRun, err := h.svc.UpdatePipelineRun(runId, pipelineRun)
+func (h *pipelineRunsHandler) HandleUpdatePipelineRun(ctx *gin.Context) {
+	updatedPipelineRun, err := h.svc.UpdatePipelineRun(ctx)
 	if err != nil {
 		log.Println(err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.JSON(http.StatusOK, updatedPipelineRun)
+	ctx.JSON(http.StatusOK, updatedPipelineRun)
 }
 
 // TODO(@SpyrosMoux) improve logic, separate bussiness logic into service
