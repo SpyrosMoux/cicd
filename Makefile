@@ -52,7 +52,7 @@ deploy-dev-server:
 
 # Proxy webhook for local development
 proxy-webhook:
-	smee -u $(SMEE_URL) -p 8080 -P /app/cicd/api/webhook
+	smee -u $(SMEE_URL) -p 8080 -P /app/cicd/api/gh/webhook
 
 # Clean up builds and Docker containers
 clean:
