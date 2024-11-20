@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/spyrosmoux/cicd/api/config"
-	"github.com/spyrosmoux/cicd/api/entities"
 	"github.com/spyrosmoux/cicd/api/middlewares"
+	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/routes"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
@@ -31,7 +31,7 @@ func init() {
 func main() {
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
-	config.Init(dsn, &entities.PipelineRun{})
+	config.Init(dsn, &pipelineruns.PipelineRun{})
 
 	// Initialize RabbitMQ
 	queue.InitRabbitMQ()

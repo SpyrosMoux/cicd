@@ -1,4 +1,4 @@
-package entities
+package pipelineruns
 
 import (
 	"errors"

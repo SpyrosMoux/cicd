@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/github"
 	"github.com/spyrosmoux/cicd/api/config"
-	"github.com/spyrosmoux/cicd/api/entities"
-	"github.com/spyrosmoux/cicd/api/repositories"
-	"github.com/spyrosmoux/cicd/api/services"
+	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -21,8 +19,8 @@ type PushEventAdapter struct {
 
 func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 	// TODO(@SpyrosMoux) is there a better way to inject the service?
-	repo := repositories.NewPipelineRunsRepository(config.DB)
-	svc := services.NewPipelineRunsService(repo)
+	repo := pipelineruns.NewRepository(config.DB)
+	svc := pipelineruns.NewService(repo)
 
 	event := eventAdapter.Event
 
@@ -35,7 +33,7 @@ func (eventAdapter *PushEventAdapter) HandleGhEvent() {
 
 	// Publish all triggered pipelines
 	for _, pipeline := range pipelines {
-		pipelineRun := entities.NewPipelineRun(*event.Repo.Name, *event.Ref)
+		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
 		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
 			fmt.Printf("No matching push event for branch %s\n", *event.Ref)

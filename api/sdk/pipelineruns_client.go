@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/spyrosmoux/cicd/api/entities"
+	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"log"
 	"net/http"
 	"time"
@@ -25,16 +25,16 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*entities.PipelineRun, error) {
+func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	parsedStatus, err := entities.ParseStatus(status)
+	parsedStatus, err := pipelineruns.ParseStatus(status)
 	if err != nil {
 		log.Printf("Failed to parse status from pipeline run %s: %s", pipelineRunId, err)
 		return nil, err
 	}
 
-	dto := entities.StatusDto{
+	dto := pipelineruns.StatusDto{
 		Status: parsedStatus.String(),
 	}
 
@@ -60,7 +60,7 @@ func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*
 	}
 
 	// Decode the response body into a User struct
-	var updatedPipelineRun entities.PipelineRun
+	var updatedPipelineRun pipelineruns.PipelineRun
 	if err := json.NewDecoder(resp.Body).Decode(&updatedPipelineRun); err != nil {
 		return nil, err
 	}

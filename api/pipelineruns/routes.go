@@ -1,11 +1,10 @@
-package routes
+package pipelineruns
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/spyrosmoux/cicd/api/handlers"
 )
 
-func PipelineRuns(route *gin.Engine, pipelineRunsHandler handlers.PipelineRunsHandler) {
+func Routes(route *gin.Engine, pipelineRunsHandler Handler) {
 	routes := route.Group("/app/cicd/api/runs")
 	{
 		routes.GET("", pipelineRunsHandler.HandleGetPipelineRuns)
