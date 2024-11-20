@@ -42,7 +42,7 @@
 
         <script>
             function fetchJobs() {
-                fetch("http://api:8080/app/cicd/api/runs") // TODO(spyrosmoux) make this env variable
+                fetch("https://vmi2205795.contaboserver.net/app/cicd/api/runs") // TODO(@SpyrosMoux) make this env variable
                     .then((response) => response.json())
                     .then((data) => {
                         let jobList = document.getElementById("job-list");

@@ -5,5 +5,9 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
+    volumes:
+      - ../../flowforge-runner.2024-07-04.private-key.pem:/flowforge-runner.2024-07-04.private-key.pem
     env_file:
       - ../.env.docker
+    ports:
+      - 8080:8080
