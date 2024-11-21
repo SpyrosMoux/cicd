@@ -7,5 +7,6 @@ import (
 
 type Service interface {
 	FetchValidPipelines(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error)
-	HandlePushEvent(event *github.PushEvent)
+	ProcessEvent(event interface{}) error
+	ProcessPushEvent(event *github.PushEvent) error
 }

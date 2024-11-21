@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/go-github/github"
-	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
@@ -15,10 +14,12 @@ import (
 	"log/slog"
 )
 
-type service struct{}
+type service struct {
+	pipelineRunsService pipelineruns.Service
+}
 
-func NewService() Service {
-	return &service{}
+func NewService(pipelineRunsService pipelineruns.Service) Service {
+	return &service{pipelineRunsService: pipelineRunsService}
 }
 
 func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error) {
@@ -71,20 +72,26 @@ func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branc
 	return validYAMLs, nil
 }
 
-func (svc *service) HandlePushEvent(event *github.PushEvent) {
-	// TODO(@SpyrosMoux) is there a better way to inject the service?
-	pipelineRunsRepo := pipelineruns.NewRepository(config.DB)
-	pipelineRunsService := pipelineruns.NewService(pipelineRunsRepo)
+func (svc *service) ProcessEvent(event interface{}) error {
+	switch ghEvent := event.(type) {
+	case *github.PushEvent:
+		return svc.ProcessPushEvent(ghEvent)
+	default:
+		return fmt.Errorf("unsupported event type %T", event)
+	}
+}
 
+func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	pipelines, err := svc.FetchValidPipelines(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
+	validPipelines, err := svc.FetchValidPipelines(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
+		return err
 	}
 
-	// Publish all triggered pipelines
-	for _, pipeline := range pipelines {
+	// Publish all triggered validPipelines
+	for _, pipeline := range validPipelines {
 		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
 
 		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
@@ -92,19 +99,21 @@ func (svc *service) HandlePushEvent(event *github.PushEvent) {
 			continue
 		}
 
-		err := pipelineRunsService.AddPipelineRun(pipelineRun)
+		err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
 		if err != nil {
 			log.Printf("Failed to add pipeline run: %v", err)
-			return
+			return err
 		}
 
 		pipelineAsString, err := yaml.Marshal(pipeline)
 		if err != nil {
 			slog.Error("Unable to convert pipeline yaml to string")
-			return
+			return err
 		}
 
 		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
 		queue.PublishJob(pipelineRun.Id, pipelineAsString)
 	}
+
+	return nil
 }

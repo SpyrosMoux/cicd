@@ -42,7 +42,7 @@ func SetupRouter() *gin.Engine {
 	pipelineRunsHandler := pipelineruns.NewHandler(pipelineRunsSvc)
 	pipelineruns.Routes(router, pipelineRunsHandler)
 
-	ghService := gh.NewService()
+	ghService := gh.NewService(pipelineRunsSvc)
 	ghHandler := gh.NewHandler(ghService)
 	gh.Routes(router, ghHandler)
 
