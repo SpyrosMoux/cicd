@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/sdk"
+	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
@@ -24,6 +26,7 @@ func main() {
 	var forever chan struct{}
 
 	client := sdk.NewClient(apiBaseUrl)
+	svc := pipelines.NewService()
 
 	go func() {
 		for d := range msgs {
@@ -34,14 +37,20 @@ func main() {
 				slog.Error("Failed to update pipeline with error: " + err.Error())
 			}
 
+			var publishRunDto dto.PublishRunDto
+			err = json.Unmarshal(d.Body, &publishRunDto)
+			if err != nil {
+				slog.Error(err.Error())
+			}
+
 			var pipeline pipelines.Pipeline
-			err = yaml.Unmarshal(d.Body, &pipeline)
+			err = yaml.Unmarshal(publishRunDto.PipelineAsBytes, &pipeline)
 			if err != nil {
 				slog.Error(err.Error())
 			}
 
 			runResult := true
-			err = pipelines.RunPipeline(pipeline)
+			err = svc.RunPipeline(pipeline, publishRunDto.Metadata)
 			if err != nil {
 				runResult = false
 				slog.Error("Failed to run pipeline with error: " + err.Error())
