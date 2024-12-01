@@ -51,7 +51,7 @@ func PublishJob(pipelineRunId string, body []byte) {
 		false,
 		false,
 		amqp.Publishing{
-			ContentType:   "text/plain",
+			ContentType:   "application/json",
 			Body:          body,
 			DeliveryMode:  amqp.Persistent,
 			CorrelationId: pipelineRunId,

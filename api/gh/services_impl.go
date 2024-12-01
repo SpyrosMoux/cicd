@@ -2,16 +2,20 @@ package gh
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"log/slog"
+	"strings"
+
 	"github.com/google/go-github/github"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
-	"log"
-	"log/slog"
 )
 
 type service struct {
@@ -105,15 +109,40 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			return err
 		}
 
-		pipelineAsString, err := yaml.Marshal(pipeline)
+		pipelineAsBytes, err := yaml.Marshal(pipeline)
 		if err != nil {
 			slog.Error("Unable to convert pipeline yaml to string")
 			return err
 		}
 
+		publishRunDto := dto.PublishRunDto{
+			PipelineAsBytes: pipelineAsBytes,
+			Metadata: dto.Metadata{
+				Repository: *event.Repo.Name,
+				Branch:     normalizeRef(*event.Ref),
+				RepoOwner:  *event.Repo.Owner.Name,
+				VcsSource:  dto.GITHUB,
+				VcsToken:   generateJWT(),
+			},
+		}
+
+		publishBody, err := json.Marshal(publishRunDto)
+		if err != nil {
+			slog.Error("Error marshalling publishRunDto into Json, " + err.Error())
+			return err
+		}
+
 		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
-		queue.PublishJob(pipelineRun.Id, pipelineAsString)
+		queue.PublishJob(pipelineRun.Id, publishBody)
 	}
 
 	return nil
+}
+
+func normalizeRef(ref string) string {
+	parts := strings.Split(ref, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
+	}
+	return ref
 }
