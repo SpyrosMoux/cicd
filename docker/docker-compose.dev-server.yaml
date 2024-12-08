@@ -14,12 +14,12 @@ services:
       - cicd_net
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routes.traefik.rule=Host(`vmi2205795.contaboserver.net`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))'
-      - 'traefik.http.routes.traefik.entrypoints=https'
-      - 'traefik.http.routes.traefik.service=api@internal'
-      - 'traefik.http.routes.traefik.tls=true'
-      - 'traefik.http.routes.traefik.tls.certresolver=letsencrypt'
-      - "traefik.http.routes.traefik.middlewares=traefik-strip"
+      - 'traefik.http.routers.traefik.rule=Host(`vmi2205795.contaboserver.net`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))'
+      - 'traefik.http.routers.traefik.entrypoints=https'
+      - 'traefik.http.routers.traefik.service=api@internal'
+      - 'traefik.http.routers.traefik.tls=true'
+      - 'traefik.http.routers.traefik.tls.certresolver=letsencrypt'
+      - "traefik.http.routers.traefik.middlewares=traefik-strip"
       - "traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik"
     ports:
       - '443:443'
@@ -102,10 +102,10 @@ services:
   web:
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routes.web.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/`)'
-      - 'traefik.http.routes.web.entrypoints=https'
-      - 'traefik.http.routes.web.tls=true'
-      - 'traefik.http.routes.web.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.web.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/`)'
+      - 'traefik.http.routers.web.entrypoints=https'
+      - 'traefik.http.routers.web.tls=true'
+      - 'traefik.http.routers.web.tls.certresolver=letsencrypt'
     image: ghcr.io/spyrosmoux/flowforge-web
     ports:
       - "3000:80"
@@ -126,10 +126,10 @@ services:
   api:
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routes.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/app/cicd/api`)'
-      - 'traefik.http.routes.api.entrypoints=https'
-      - 'traefik.http.routes.api.tls=true'
-      - 'traefik.http.routes.api.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/app/cicd/api`)'
+      - 'traefik.http.routers.api.entrypoints=https'
+      - 'traefik.http.routers.api.tls=true'
+      - 'traefik.http.routers.api.tls.certresolver=letsencrypt'
     container_name: api
     image: ghcr.io/spyrosmoux/cicd/api
     build:
