@@ -34,7 +34,7 @@ func init() {
 	config.Init(dsn, &pipelineruns.PipelineRun{})
 
 	// Initialize RabbitMQ
-	queue.InitRabbitMQ()
+	queue.InitRabbitMQPublisher()
 
 	// Initialize SuperTokens
 	middlewares.InitSuperTokens()
