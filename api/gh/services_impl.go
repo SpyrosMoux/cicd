@@ -115,6 +115,12 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			return err
 		}
 
+		vcsToken, err := getInstallationToken(*event.Installation.ID)
+		if err != nil {
+			slog.Error(err.Error())
+			return err
+		}
+
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
@@ -122,7 +128,7 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 				Branch:     normalizeRef(*event.Ref),
 				RepoOwner:  *event.Repo.Owner.Name,
 				VcsSource:  dto.GITHUB,
-				VcsToken:   generateJWT(),
+				VcsToken:   vcsToken,
 			},
 		}
 
