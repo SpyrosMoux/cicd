@@ -35,40 +35,14 @@ func (svc *service) UpdatePipelineRun(ctx *gin.Context) (*PipelineRun, error) {
 	}
 
 	savedRun.Status = run.Status
-	savedRun.Repository = run.Repository
-	savedRun.Branch = run.Branch
-	savedRun.TimeTriggered = run.TimeTriggered
-	savedRun.TimeStarted = run.TimeStarted
-	savedRun.TimeEnded = run.TimeEnded
 
-	updatedRun, err := svc.repo.Update(savedRun)
-	if err != nil {
-		return nil, err
+	if run.TimeStarted != 0 {
+		savedRun.TimeStarted = run.TimeStarted
 	}
 
-	return updatedRun, nil
-}
-
-func (svc *service) UpdatePipelineRunStatus(ctx *gin.Context) (*PipelineRun, error) {
-	runId := ctx.Param("id")
-
-	var statusStr StatusDto
-	err := ctx.ShouldBindJSON(&statusStr)
-	if err != nil {
-		return nil, err
+	if run.TimeEnded != 0 {
+		savedRun.TimeEnded = run.TimeEnded
 	}
-
-	status, err := ParseStatus(statusStr.Status)
-	if err != nil {
-		return nil, err
-	}
-
-	savedRun, err := svc.repo.FindById(runId)
-	if err != nil {
-		return nil, err
-	}
-
-	savedRun.Status = status.String()
 
 	updatedRun, err := svc.repo.Update(savedRun)
 	if err != nil {

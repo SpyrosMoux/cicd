@@ -10,6 +10,7 @@ import (
 	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"gopkg.in/yaml.v3"
 	"log/slog"
+	"time"
 )
 
 var (
@@ -32,15 +33,18 @@ func main() {
 		for d := range msgs {
 			slog.Info("Received a message with correlation id: " + d.CorrelationId)
 
-			_, err := client.UpdatePipelineRunStatus(d.CorrelationId, pipelineruns.RUNNING.String())
-			if err != nil {
-				slog.Error("Failed to update pipeline with error: " + err.Error())
-			}
-
 			var publishRunDto dto.PublishRunDto
-			err = json.Unmarshal(d.Body, &publishRunDto)
+			err := json.Unmarshal(d.Body, &publishRunDto)
 			if err != nil {
 				slog.Error(err.Error())
+			}
+
+			_, err = client.UpdatePipelineRun(d.CorrelationId, dto.UpdatePipelineRunDto{
+				Status:      pipelineruns.RUNNING.String(),
+				TimeStarted: time.Now().Unix(),
+			})
+			if err != nil {
+				slog.Error("Failed to update pipeline with error: " + err.Error())
 			}
 
 			var pipeline pipelines.Pipeline
@@ -63,12 +67,18 @@ func main() {
 			}
 
 			if runResult {
-				_, err = client.UpdatePipelineRunStatus(d.CorrelationId, pipelineruns.COMPLETED.String())
+				_, err = client.UpdatePipelineRun(d.CorrelationId, dto.UpdatePipelineRunDto{
+					Status:    pipelineruns.COMPLETED.String(),
+					TimeEnded: time.Now().Unix(),
+				})
 				if err != nil {
 					slog.Error("Failed to update pipeline with error: " + err.Error())
 				}
 			} else {
-				_, err = client.UpdatePipelineRunStatus(d.CorrelationId, pipelineruns.FAILED.String())
+				_, err = client.UpdatePipelineRun(d.CorrelationId, dto.UpdatePipelineRunDto{
+					Status:    pipelineruns.FAILED.String(),
+					TimeEnded: time.Now().Unix(),
+				})
 				if err != nil {
 					slog.Error("Failed to update pipeline with error: " + err.Error())
 				}
