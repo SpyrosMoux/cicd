@@ -33,7 +33,7 @@ func (c *Client) UpdatePipelineRun(pipelineRunId string, updatePipelineRunDto dt
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
