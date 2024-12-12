@@ -22,7 +22,7 @@ func init() {
 }
 
 func main() {
-	msgs := queue.InitRabbitMQRunner()
+	msgs := queue.InitRabbitMQConsumer()
 
 	var forever chan struct{}
 

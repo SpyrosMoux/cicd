@@ -18,20 +18,11 @@ var (
 	rabbitmqPort     = helpers.LoadEnvVariable("RABBITMQ_PORT")
 )
 
-// TODO(@SpyrosMoux) rename to InitRabbitMQPublisher and make any changes if necessary to generify this
-func InitRabbitMQ() {
-	var err error
-	conn, err = amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
-	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
-	}
+// InitRabbitMQPublisher initializes the connection to RabbitMQ for the Api
+func InitRabbitMQPublisher() {
+	channel = establishConnection()
 
-	channel, err = conn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open a channel: %v", err)
-	}
-
-	_, err = channel.QueueDeclare(
+	_, err := channel.QueueDeclare(
 		"jobs",
 		true,
 		false,
@@ -62,19 +53,9 @@ func PublishJob(pipelineRunId string, body []byte) {
 	}
 }
 
-// InitRabbitMQRunner initializes the connection to RabbitMQ for the Runner
-// TODO(@SpyrosMoux) rename to InitRabbitMQConsumer and make any changes if necessary to generify this
-func InitRabbitMQRunner() <-chan amqp.Delivery {
-	conn, err := amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
-	if err != nil {
-		slog.Error("Failed to connect to RabbitMQ " + err.Error())
-		os.Exit(1)
-	}
-
-	ch, err := conn.Channel()
-	if err != nil {
-		slog.Error("Failed to open a channel: " + err.Error())
-	}
+// InitRabbitMQConsumer initializes the connection to RabbitMQ for the Runner
+func InitRabbitMQConsumer() <-chan amqp.Delivery {
+	ch := establishConnection()
 
 	q, err := ch.QueueDeclare(
 		"jobs",
@@ -108,4 +89,21 @@ func InitRabbitMQRunner() <-chan amqp.Delivery {
 	}
 
 	return msgs
+}
+
+func establishConnection() *amqp.Channel {
+	var err error
+	conn, err = amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
+	if err != nil {
+		slog.Error("failed to connect to RabbitMQ " + err.Error())
+		os.Exit(1)
+	}
+
+	channel, err = conn.Channel()
+	if err != nil {
+		slog.Error("failed to open a channel: " + err.Error())
+		os.Exit(1)
+	}
+
+	return channel
 }
