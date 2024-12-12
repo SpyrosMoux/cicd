@@ -7,5 +7,4 @@ import (
 type Handler interface {
 	HandleGetPipelineRuns(c *gin.Context)
 	HandleUpdatePipelineRun(c *gin.Context)
-	HandleUpdatePipelineRunStatus(c *gin.Context)
 }

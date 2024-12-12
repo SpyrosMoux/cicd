@@ -33,13 +33,3 @@ func (h *handler) HandleUpdatePipelineRun(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, updatedPipelineRun)
 }
-
-func (h *handler) HandleUpdatePipelineRunStatus(ctx *gin.Context) {
-	updatedPipelineRun, err := h.svc.UpdatePipelineRunStatus(ctx)
-	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-
-	ctx.JSON(http.StatusOK, updatedPipelineRun)
-}

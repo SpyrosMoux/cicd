@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/middlewares"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
@@ -17,6 +18,7 @@ var (
 	dbUser  string
 	dbPass  string
 	dbName  string
+	router  *gin.Engine
 )
 
 func init() {
@@ -26,9 +28,7 @@ func init() {
 	dbUser = helpers.LoadEnvVariable("DB_USER")
 	dbPass = helpers.LoadEnvVariable("DB_PASS")
 	dbName = helpers.LoadEnvVariable("DB_NAME")
-}
 
-func main() {
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
 	config.Init(dsn, &pipelineruns.PipelineRun{})
@@ -40,8 +40,10 @@ func main() {
 	middlewares.InitSuperTokens()
 
 	// Setup routes
-	router := routes.SetupRouter()
+	router = routes.SetupRouter()
+}
 
+func main() {
 	log.Printf("Starting server on port %s", apiPort)
 	log.Fatal(router.Run(":" + apiPort))
 }

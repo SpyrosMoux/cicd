@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
-	"log"
+	"github.com/spyrosmoux/cicd/common/dto"
 	"net/http"
 	"time"
 )
@@ -25,41 +25,28 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRunStatus(pipelineRunId string, status string) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRun(pipelineRunId string, updatePipelineRunDto dto.UpdatePipelineRunDto) (*pipelineruns.PipelineRun, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
-	parsedStatus, err := pipelineruns.ParseStatus(status)
-	if err != nil {
-		log.Printf("Failed to parse status from pipeline run %s: %s", pipelineRunId, err)
-		return nil, err
-	}
-
-	dto := pipelineruns.StatusDto{
-		Status: parsedStatus.String(),
-	}
-
-	payload, err := json.Marshal(dto)
+	payload, err := json.Marshal(updatePipelineRunDto)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
 
-	// Make the HTTP request to the API
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to update pipeline status: %s", resp.Status)
+		return nil, fmt.Errorf("failed to update pipeline run: %s", resp.Status)
 	}
 
-	// Decode the response body into a User struct
 	var updatedPipelineRun pipelineruns.PipelineRun
 	if err := json.NewDecoder(resp.Body).Decode(&updatedPipelineRun); err != nil {
 		return nil, err

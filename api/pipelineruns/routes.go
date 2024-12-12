@@ -9,6 +9,5 @@ func Routes(route *gin.Engine, pipelineRunsHandler Handler) {
 	{
 		routes.GET("", pipelineRunsHandler.HandleGetPipelineRuns)
 		routes.POST("/:id", pipelineRunsHandler.HandleUpdatePipelineRun) // TODO(@SpyrosMoux) this should be PUT
-		routes.PUT("/:id", pipelineRunsHandler.HandleUpdatePipelineRunStatus)
 	}
 }
