@@ -7,12 +7,13 @@ import (
 )
 
 const (
+	RUNNER_DIR   = "/flowforge"
 	WORK_DIR     = "_work"
 	ARTIFACT_DIR = "a"
 	SOURCE_DIR   = "s"
 )
 
-var GlobalDM = &DirManagement{}
+var GlobalDM *DirManagement
 
 type DirManagement struct {
 	CurrentDir  string
@@ -30,6 +31,27 @@ type DirManager interface {
 	SetWorkDir(dirName string) (string, error)
 	SetArtifactDir(dirName string) (string, error)
 	SetSourceDir(dirName string) (string, error)
+}
+
+func InitGlobalDM() error {
+	GlobalDM = &DirManagement{
+		CurrentDir:  "",
+		WorkDir:     "",
+		ArtifactDir: "",
+		SourceDir:   "",
+	}
+
+	err := GlobalDM.CreateDirectory(RUNNER_DIR)
+	if err != nil {
+		return err
+	}
+
+	_, err = GlobalDM.SetCurrentDir(RUNNER_DIR)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (dm *DirManagement) GetCurrentDir() string {

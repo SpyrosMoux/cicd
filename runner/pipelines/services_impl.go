@@ -93,7 +93,7 @@ func (svc *service) CleanupRun() error {
 		return err
 	}
 
-	_, err = dirmanagement.GlobalDM.SetCurrentDir("../")
+	_, err = dirmanagement.GlobalDM.SetCurrentDir(dirmanagement.RUNNER_DIR)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,12 @@ func (svc *service) SubstituteVariables(command string, variables map[string]str
 
 // RunPipeline prepares, executes and cleans-up a run
 func (svc *service) RunPipeline(pipeline Pipeline, runMetadata dto.Metadata) error {
-	defer svc.CleanupRun()
+	defer func(svc *service) {
+		err := svc.CleanupRun()
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}(svc)
 
 	err := svc.PrepareRun(runMetadata)
 	if err != nil {
