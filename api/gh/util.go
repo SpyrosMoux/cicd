@@ -23,7 +23,10 @@ var (
 
 // getInstallationToken Uses an installationId and a generated JWT token to get an access token
 func getInstallationToken(installationId int64) (string, error) {
-	token := generateJWT()
+	token, err := generateJWT()
+	if err != nil {
+		return "", err
+	}
 
 	url := fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationId)
 
@@ -55,15 +58,15 @@ func getInstallationToken(installationId int64) (string, error) {
 
 // generateJWT generates a JWT token from a given GitHub App private key and pem file.
 // TODO(@SpyrosMoux) should return error instead of fatalling
-func generateJWT() string {
+func generateJWT() (string, error) {
 	pemFileData, err := os.ReadFile(ghAppPrivateKey)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("unable to read GitHub App private key, %s\n", err.Error())
 	}
 
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(pemFileData)
 	if err != nil {
-		log.Fatal("ERROR: Could not parse private key with error: ", err)
+		return "", fmt.Errorf("could not parse private key with error: %s\n", err.Error())
 	}
 
 	claims := jwt.MapClaims{
@@ -76,10 +79,10 @@ func generateJWT() string {
 
 	signedToken, err := token.SignedString(key)
 	if err != nil {
-		log.Fatal("ERROR: Could not generate token with error: ", err)
+		return "", fmt.Errorf("could not generate token with error: %s\n", err.Error())
 	}
 
-	return signedToken
+	return signedToken, nil
 }
 
 // downloadYAMLContent downloads the content of a given raw GitHub url
