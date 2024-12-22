@@ -7,9 +7,11 @@ import (
 	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
+	"github.com/spyrosmoux/cicd/runner/dirmanagement"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"gopkg.in/yaml.v3"
 	"log/slog"
+	"os"
 	"time"
 )
 
@@ -19,6 +21,11 @@ var (
 
 func init() {
 	apiBaseUrl = helpers.LoadEnvVariable("API_BASE_URL")
+	err := dirmanagement.InitGlobalDM()
+	if err != nil {
+		slog.Error("Failed to initialize file system: " + err.Error())
+		os.Exit(1)
+	}
 }
 
 func main() {
