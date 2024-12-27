@@ -6,6 +6,7 @@ import (
 )
 
 var WebhookSecret = helpers.LoadEnvVariable("GH_WEBHOOK_SECRET")
+var GhToken = helpers.LoadEnvVariable("GH_TOKEN")
 
 type Handler interface {
 	HandleWebhook(ctx *gin.Context)
