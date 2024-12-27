@@ -1,103 +1,23 @@
 package gh
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/go-github/github"
-	"github.com/spyrosmoux/cicd/common/helpers"
+	"github.com/google/go-github/v68/github"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
 )
-
-var (
-	ghAppClientId   = helpers.LoadEnvVariable("GITHUB_APP_CLIENT_ID")
-	ghAppPrivateKey = helpers.LoadEnvVariable("GITHUB_APP_PRIVATE_KEY_PATH")
-)
-
-// getInstallationToken Uses an installationId and a generated JWT token to get an access token
-func getInstallationToken(installationId int64) (string, error) {
-	token, err := generateJWT()
-	if err != nil {
-		return "", err
-	}
-
-	url := fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationId)
-
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Add("Accept", "application/vnd.github+json")
-	req.Header.Add("Authorization", "Bearer "+token)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var tokenResponse AccessTokenResponse
-	err = json.Unmarshal(body, &tokenResponse)
-
-	return tokenResponse.AccessToken, nil
-}
-
-// generateJWT generates a JWT token from a given GitHub App private key and pem file.
-// TODO(@SpyrosMoux) should return error instead of fatalling
-func generateJWT() (string, error) {
-	pemFileData, err := os.ReadFile(ghAppPrivateKey)
-	if err != nil {
-		return "", fmt.Errorf("unable to read GitHub App private key, %s\n", err.Error())
-	}
-
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(pemFileData)
-	if err != nil {
-		return "", fmt.Errorf("could not parse private key with error: %s\n", err.Error())
-	}
-
-	claims := jwt.MapClaims{
-		"iat": time.Now().Unix() - 60,  // Issued at, 60 seconds in the past to allow for clock drift
-		"exp": time.Now().Unix() + 600, // Token expires in 10 minutes
-		"iss": ghAppClientId,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-
-	signedToken, err := token.SignedString(key)
-	if err != nil {
-		return "", fmt.Errorf("could not generate token with error: %s\n", err.Error())
-	}
-
-	return signedToken, nil
-}
 
 // downloadYAMLContent downloads the content of a given raw GitHub url
-func downloadYAMLContent(downloadUrl string, installationId int64) ([]byte, error) {
-	token, err := getInstallationToken(installationId)
-	if err != nil {
-		return nil, err
-	}
-
+func downloadYAMLContent(downloadUrl string) ([]byte, error) {
 	req, err := http.NewRequest("GET", downloadUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3.raw")
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+GhToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

@@ -9,12 +9,11 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v68/github"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
-	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -26,19 +25,9 @@ func NewService(pipelineRunsService pipelineruns.Service) Service {
 	return &service{pipelineRunsService: pipelineRunsService}
 }
 
-func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branchName string, installationId int64) ([]pipelines.Pipeline, error) {
-	token, err := getInstallationToken(installationId)
-	if err != nil {
-		return nil, err
-	}
-
+func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branchName string) ([]pipelines.Pipeline, error) {
 	ctx := context.Background()
-	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
-		TokenType:   "Bearer",
-		AccessToken: token,
-	})
-	tokenClient := oauth2.NewClient(ctx, tokenSource)
-	client := github.NewClient(tokenClient)
+	client := github.NewClient(nil).WithAuthToken(GhToken)
 	options := &github.RepositoryContentGetOptions{
 		Ref: branchName,
 	}
@@ -57,7 +46,7 @@ func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branc
 		if downloadURL == "" {
 			return nil, errors.New("Could not get download URL for pipeline " + file.GetName())
 		}
-		fileContent, err := downloadYAMLContent(downloadURL, installationId)
+		fileContent, err := downloadYAMLContent(downloadURL)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +77,7 @@ func (svc *service) ProcessEvent(event interface{}) error {
 func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
 
-	validPipelines, err := svc.FetchValidPipelines(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref, *event.Installation.ID)
+	validPipelines, err := svc.FetchValidPipelines(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref)
 	if err != nil {
 		log.Printf("Failed to fetch pipeline config: %v", err)
 		return err
@@ -115,12 +104,6 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			return err
 		}
 
-		vcsToken, err := getInstallationToken(*event.Installation.ID)
-		if err != nil {
-			slog.Error(err.Error())
-			return err
-		}
-
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
@@ -128,7 +111,7 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 				Branch:     normalizeRef(*event.Ref),
 				RepoOwner:  *event.Repo.Owner.Name,
 				VcsSource:  dto.GITHUB,
-				VcsToken:   vcsToken,
+				VcsToken:   GhToken,
 			},
 		}
 
