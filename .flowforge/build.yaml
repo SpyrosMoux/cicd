@@ -1,6 +1,5 @@
 triggers:
   branch:
-    - "main"
     - "*"
   pr:
     - "none"
