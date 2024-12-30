@@ -11,6 +11,7 @@ services:
       - ${PWD}/traefik:/etc/traefik
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/traefik.log:/var/log/traefik.log
+      - /var/log/access.log:/var/log/access.log
     networks:
       - cicd_net
     labels:
