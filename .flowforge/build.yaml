@@ -1,13 +1,14 @@
 triggers:
-    branch:
-        - "main"
-    pr:
-        - "none"
+  branch:
+    - "main"
+    - "*"
+  pr:
+    - "none"
 
 jobs:
-    - name: Build Application
-      steps:
-          - name: Build API & Runner
-            run: |
-                cd ./s/cicd/
-                make build-all-docker
+  - name: Build Application
+    steps:
+      - name: Build API & Runner
+        run: |
+          cd ./s/cicd/
+          make build-all-docker
