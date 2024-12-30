@@ -104,14 +104,20 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			return err
 		}
 
+		repoVisibility := dto.PUBLIC
+		if *event.Repo.Private {
+			repoVisibility = dto.PRIVATE
+		}
+
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
-				Repository: *event.Repo.Name,
-				Branch:     normalizeRef(*event.Ref),
-				RepoOwner:  *event.Repo.Owner.Name,
-				VcsSource:  dto.GITHUB,
-				VcsToken:   GhToken,
+				Repository:     *event.Repo.Name,
+				Branch:         normalizeRef(*event.Ref),
+				RepoOwner:      *event.Repo.Owner.Name,
+				RepoVisibility: repoVisibility,
+				VcsSource:      dto.GITHUB,
+				VcsToken:       GhToken,
 			},
 		}
 
