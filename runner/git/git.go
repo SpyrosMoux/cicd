@@ -26,6 +26,9 @@ func CloneRepo(repoMeta dto.Metadata, dir string) error {
 	normalizedUrl := baseUrl + repoUrl
 
 	cmd := exec.Command("git", "clone", normalizedUrl, dir+"/"+repoMeta.Repository)
+
+	slog.Info("cmd: " + cmd.String())
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return err
