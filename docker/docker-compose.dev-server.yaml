@@ -42,7 +42,6 @@ services:
       - "--log.level=ERROR"
       - "--log.filePath=/var/log/traefik.log"
       - "--accesslog=true"
-      - "--accesslog.addinternals=true"
       - "--accesslog.filepath=/var/log/access.log"
 
   api-db:
