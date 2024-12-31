@@ -3,6 +3,8 @@ package pipelines
 import (
 	"errors"
 	"fmt"
+
+	"github.com/spyrosmoux/cicd/runner/dirmanagement"
 	"gopkg.in/yaml.v3"
 )
 
@@ -29,6 +31,17 @@ type Pipeline struct {
 	Triggers  Triggers          `yaml:"triggers,omitempty"`
 	Variables map[string]string `yaml:"variables,omitempty"`
 	Jobs      []Job             `yaml:"jobs"`
+}
+
+var PredefinedVars map[string]string
+
+// SetPredefinedVars sets the PredefinedVars map after the dirmanagement.GlobalDM
+// is set during the initialization of the runner
+func SetPredefinedVars() {
+	PredefinedVars = make(map[string]string)
+	PredefinedVars["$(SourcesDirectory)"] = dirmanagement.GlobalDM.GetSourceDir()
+	PredefinedVars["$(WorkDirectory)"] = dirmanagement.GlobalDM.GetWorkDir()
+	PredefinedVars["$(ArtifactsDirectory)"] = dirmanagement.GlobalDM.GetArtifactDir()
 }
 
 // ValidateYAMLStructure validates the structure of a given YAML content.

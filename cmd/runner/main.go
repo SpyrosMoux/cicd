@@ -2,6 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"log/slog"
+	"os"
+	"time"
+
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/sdk"
 	"github.com/spyrosmoux/cicd/common/dto"
@@ -10,9 +14,6 @@ import (
 	"github.com/spyrosmoux/cicd/runner/dirmanagement"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"gopkg.in/yaml.v3"
-	"log/slog"
-	"os"
-	"time"
 )
 
 var (
@@ -26,6 +27,7 @@ func init() {
 		slog.Error("Failed to initialize file system: " + err.Error())
 		os.Exit(1)
 	}
+	pipelines.SetPredefinedVars()
 }
 
 func main() {
