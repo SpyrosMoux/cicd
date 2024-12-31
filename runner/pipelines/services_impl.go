@@ -2,6 +2,7 @@ package pipelines
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -125,7 +126,11 @@ func (svc *service) RunPipeline(pipeline Pipeline, runMetadata dto.Metadata) err
 
 // SubstituteUserVariables substitutes user defined variables for a specific command
 func (svc *service) SubstituteUserVariables(command string, variables map[string]string) string {
-	return replaceVariables(command, variables)
+	for key, value := range variables {
+		placeholder := fmt.Sprintf("${%s}", key)
+		command = strings.ReplaceAll(command, placeholder, value)
+	}
+	return command
 }
 
 // SubstitutePredefinedVariables substitutes all predefined variables used in the pipeline
