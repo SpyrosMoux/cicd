@@ -8,5 +8,6 @@ type Service interface {
 	CleanupRun() error
 	ExecuteStep(step Step, variables map[string]string) error
 	ExecuteJob(job Job, variables map[string]string) error
-	SubstituteVariables(command string, variables map[string]string) string
+	SubstituteUserVariables(command string, variables map[string]string) string
+	SubstitutePredefinedVariables(pipeline Pipeline, variables map[string]string) Pipeline
 }

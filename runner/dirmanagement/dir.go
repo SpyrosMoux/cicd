@@ -33,6 +33,7 @@ type DirManager interface {
 	SetSourceDir(dirName string) (string, error)
 }
 
+// InitGlobalDM Used during the initialization of the runner
 func InitGlobalDM() error {
 	GlobalDM = &DirManagement{
 		CurrentDir:  "",
@@ -47,6 +48,11 @@ func InitGlobalDM() error {
 	}
 
 	_, err = GlobalDM.SetCurrentDir(RUNNER_DIR)
+	if err != nil {
+		return err
+	}
+
+	err = setDefaultSettings()
 	if err != nil {
 		return err
 	}
@@ -129,4 +135,44 @@ func findDir(dirName string) (string, error) {
 		return "", fmt.Errorf("error finding absolute path for directory %s, %s", dirName, err.Error())
 	}
 	return abs, err
+}
+
+// Used to initialize the GlobalDM with default settings
+func setDefaultSettings() error {
+	err := GlobalDM.CreateDirectory(WORK_DIR)
+	if err != nil {
+		return err
+	}
+
+	_, err = GlobalDM.SetWorkDir(WORK_DIR)
+	if err != nil {
+		return err
+	}
+
+	_, err = GlobalDM.SetCurrentDir(GlobalDM.GetWorkDir())
+	if err != nil {
+		return err
+	}
+
+	err = GlobalDM.CreateDirectory(ARTIFACT_DIR)
+	if err != nil {
+		return err
+	}
+
+	_, err = GlobalDM.SetArtifactDir(ARTIFACT_DIR)
+	if err != nil {
+		return err
+	}
+
+	err = GlobalDM.CreateDirectory(SOURCE_DIR)
+	if err != nil {
+		return err
+	}
+
+	_, err = GlobalDM.SetSourceDir(SOURCE_DIR)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
