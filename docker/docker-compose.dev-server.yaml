@@ -15,7 +15,7 @@ services:
       - cicd_net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`vmi2205795.contaboserver.net`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))"
+      - "traefik.http.routers.traefik.rule=Host(`flowforge.spyrosmoux.com`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))"
       - "traefik.http.routers.traefik.entrypoints=https"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls=true"
@@ -106,7 +106,7 @@ services:
   web:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/`)"
+      - "traefik.http.routers.web.rule=Host(`flowforge.spyrosmoux.com`) && PathPrefix(`/`)"
       - "traefik.http.routers.web.entrypoints=https"
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
@@ -133,7 +133,7 @@ services:
   api:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`vmi2205795.contaboserver.net`) && PathPrefix(`/app/cicd/api`)"
+      - "traefik.http.routers.api.rule=Host(`flowforge.spyrosmoux.com`) && PathPrefix(`/app/cicd/api`)"
       - "traefik.http.routers.api.entrypoints=https"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
