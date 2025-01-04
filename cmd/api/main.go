@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/cicd/api/config"
-	"github.com/spyrosmoux/cicd/api/middlewares"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/routes"
 	"github.com/spyrosmoux/cicd/common/helpers"
@@ -36,10 +35,7 @@ func init() {
 	// Initialize RabbitMQ
 	queue.InitRabbitMQPublisher()
 
-	// Initialize SuperTokens
-	middlewares.InitSuperTokens()
-
-	// Setup routes
+    // Setup routes
 	router = routes.SetupRouter()
 }
 
