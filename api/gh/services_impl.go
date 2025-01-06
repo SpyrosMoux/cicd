@@ -68,8 +68,8 @@ func (svc *service) ProcessEvent(event interface{}) error {
 	switch ghEvent := event.(type) {
 	case *github.PushEvent:
 		return svc.ProcessPushEvent(ghEvent)
-    case *github.PullRequestEvent:
-        return svc.ProcessPullRequestEvent(ghEvent)
+	case *github.PullRequestEvent:
+		return svc.ProcessPullRequestEvent(ghEvent)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -110,10 +110,10 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			repoVisibility = dto.PRIVATE
 		}
 
-        branch, err := getBranchNameFromRef(*event.Ref)
-        if err != nil {
-            return err
-        }
+		branch, err := getBranchNameFromRef(*event.Ref)
+		if err != nil {
+			return err
+		}
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
@@ -140,37 +140,37 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 }
 
 func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) error {
-    headBranch := event.GetPullRequest().GetHead()
-    baseBranch := event.GetPullRequest().GetBase()
-    slog.Info("received a PullRequestEvent for", "repo", event.GetRepo().GetName(), "headRef", headBranch.GetRef(), "baseRef", baseBranch.GetRef())
+	headBranch := event.GetPullRequest().GetHead()
+	baseBranch := event.GetPullRequest().GetBase()
+	slog.Info("received a PullRequestEvent for", "repo", event.GetRepo().GetName(), "headRef", headBranch.GetRef(), "baseRef", baseBranch.GetRef())
 
-    switch event.GetAction() {
-    case "opened", "reopened", "synchronize":
-        slog.Debug("valid", "action", event.GetAction())
-    default:
-        slog.Warn("skipping pull request event", "action", event.GetAction())
-        return nil
-    }
-    
-    validPipelines, err := svc.FetchValidPipelines(headBranch.GetRepo().GetOwner().GetLogin(), headBranch.GetRepo().GetName(), headBranch.GetRef())
-    if err != nil {
-        slog.Error("unanble to fetch valid pipelines", "repo", headBranch.GetRepo().GetName(), "err", err.Error())
-        return err
-    }
+	switch event.GetAction() {
+	case "opened", "reopened", "synchronize":
+		slog.Debug("valid", "action", event.GetAction())
+	default:
+		slog.Warn("skipping pull request event", "action", event.GetAction())
+		return nil
+	}
 
-    for _, pipeline := range validPipelines {
-        pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef())
-        
+	validPipelines, err := svc.FetchValidPipelines(headBranch.GetRepo().GetOwner().GetLogin(), headBranch.GetRepo().GetName(), headBranch.GetRef())
+	if err != nil {
+		slog.Error("unanble to fetch valid pipelines", "repo", headBranch.GetRepo().GetName(), "err", err.Error())
+		return err
+	}
+
+	for _, pipeline := range validPipelines {
+		pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef())
+
 		if !matchPullRequestEventWithBranch(event, pipeline.Triggers.PR) {
-            slog.Info("no matching base", "branch", baseBranch.GetRef())
+			slog.Info("no matching base", "branch", baseBranch.GetRef())
 			continue
 		}
 
-        err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
-        if err != nil {
-            slog.Error("failed to add pipelineRun", "err", err.Error())
-            return  err
-        }
+		err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
+		if err != nil {
+			slog.Error("failed to add pipelineRun", "err", err.Error())
+			return err
+		}
 
 		pipelineAsBytes, err := yaml.Marshal(pipeline)
 		if err != nil {
@@ -183,10 +183,10 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 			repoVisibility = dto.PRIVATE
 		}
 
-        branch, err := getBranchNameFromRef(headBranch.GetRef())
-        if err != nil {
-            return err
-        }
+		branch, err := getBranchNameFromRef(headBranch.GetRef())
+		if err != nil {
+			return err
+		}
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
@@ -201,14 +201,13 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 
 		publishBody, err := json.Marshal(publishRunDto)
 		if err != nil {
-            slog.Error("unable to marshal publishRunDto into Json", "err", err.Error())
+			slog.Error("unable to marshal publishRunDto into Json", "err", err.Error())
 			return err
 		}
 
-        slog.Info("publishing pipeline run with", "id", pipelineRun.Id)
+		slog.Info("publishing pipeline run with", "id", pipelineRun.Id)
 		queue.PublishJob(pipelineRun.Id, publishBody)
 
-    }
-    return nil
+	}
+	return nil
 }
-

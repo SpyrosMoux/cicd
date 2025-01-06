@@ -73,9 +73,9 @@ func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
 // matchPullRequestEventWithBranch matches the base branch (where the PR points to) with the list
 // of branches mentioned in the pr: section of the yaml. If there is match return true else false
 func matchPullRequestEventWithBranch(event *github.PullRequestEvent, branches []string) bool {
-    branchName := event.GetPullRequest().GetBase().GetRef()
+	branchName := event.GetPullRequest().GetBase().GetRef()
 
-    shouldRun := false
+	shouldRun := false
 	for _, branch := range branches {
 		if branch == "*" {
 			shouldRun = true
@@ -83,7 +83,7 @@ func matchPullRequestEventWithBranch(event *github.PullRequestEvent, branches []
 		}
 
 		if branchName == branch {
-            slog.Info("matching pull request event for", "branch", branch)
+			slog.Info("matching pull request event for", "branch", branch)
 			shouldRun = true
 		}
 	}
@@ -93,8 +93,8 @@ func matchPullRequestEventWithBranch(event *github.PullRequestEvent, branches []
 
 func getBranchNameFromRef(ref string) (string, error) {
 	if !strings.Contains(ref, "refs/heads/") {
-		return ref, nil	
-    }
+		return ref, nil
+	}
 
 	parts := strings.SplitAfter(ref, "refs/heads/")
 	if len(parts) != 2 {

@@ -9,5 +9,5 @@ type Service interface {
 	FetchValidPipelines(repoOwner string, repoName string, branchName string) ([]pipelines.Pipeline, error)
 	ProcessEvent(event interface{}) error
 	ProcessPushEvent(event *github.PushEvent) error
-    ProcessPullRequestEvent(event *github.PullRequestEvent) error
+	ProcessPullRequestEvent(event *github.PullRequestEvent) error
 }

@@ -16,12 +16,12 @@ func SetupRouter() *gin.Engine {
 
 	// CORS
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:3000", "http://localhost:63342"},
-		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:63342"},
+		AllowMethods:     []string{"GET", "POST", "DELETE", "PUT", "OPTIONS"},
 		AllowCredentials: true,
 	}))
 
-    pipelineRunsRepo := pipelineruns.NewRepository(config.DB)
+	pipelineRunsRepo := pipelineruns.NewRepository(config.DB)
 	pipelineRunsSvc := pipelineruns.NewService(pipelineRunsRepo)
 	pipelineRunsHandler := pipelineruns.NewHandler(pipelineRunsSvc)
 	pipelineruns.Routes(router, pipelineRunsHandler)
