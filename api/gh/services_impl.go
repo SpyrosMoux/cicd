@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"strings"
 
 	"github.com/google/go-github/v68/github"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
@@ -69,6 +68,8 @@ func (svc *service) ProcessEvent(event interface{}) error {
 	switch ghEvent := event.(type) {
 	case *github.PushEvent:
 		return svc.ProcessPushEvent(ghEvent)
+    case *github.PullRequestEvent:
+        return svc.ProcessPullRequestEvent(ghEvent)
 	default:
 		return fmt.Errorf("unsupported event type %T", event)
 	}
@@ -109,11 +110,15 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 			repoVisibility = dto.PRIVATE
 		}
 
+        branch, err := getBranchNameFromRef(*event.Ref)
+        if err != nil {
+            return err
+        }
 		publishRunDto := dto.PublishRunDto{
 			PipelineAsBytes: pipelineAsBytes,
 			Metadata: dto.Metadata{
 				Repository:     *event.Repo.Name,
-				Branch:         normalizeRef(*event.Ref),
+				Branch:         branch,
 				RepoOwner:      *event.Repo.Owner.Name,
 				RepoVisibility: repoVisibility,
 				VcsSource:      dto.GITHUB,
@@ -134,10 +139,76 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 	return nil
 }
 
-func normalizeRef(ref string) string {
-	parts := strings.Split(ref, "/")
-	if len(parts) > 0 {
-		return parts[len(parts)-1]
-	}
-	return ref
+func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) error {
+    headBranch := event.GetPullRequest().GetHead()
+    baseBranch := event.GetPullRequest().GetBase()
+    slog.Info("received a PullRequestEvent for", "repo", event.GetRepo().GetName(), "headRef", headBranch.GetRef(), "baseRef", baseBranch.GetRef())
+
+    switch event.GetAction() {
+    case "opened", "reopened", "synchronize":
+        slog.Debug("valid", "action", event.GetAction())
+    default:
+        slog.Warn("skipping pull request event", "action", event.GetAction())
+        return nil
+    }
+    
+    validPipelines, err := svc.FetchValidPipelines(headBranch.GetRepo().GetOwner().GetLogin(), headBranch.GetRepo().GetName(), headBranch.GetRef())
+    if err != nil {
+        slog.Error("unanble to fetch valid pipelines", "repo", headBranch.GetRepo().GetName(), "err", err.Error())
+        return err
+    }
+
+    for _, pipeline := range validPipelines {
+        pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef())
+        
+		if !matchPullRequestEventWithBranch(event, pipeline.Triggers.PR) {
+            slog.Info("no matching base", "branch", baseBranch.GetRef())
+			continue
+		}
+
+        err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
+        if err != nil {
+            slog.Error("failed to add pipelineRun", "err", err.Error())
+            return  err
+        }
+
+		pipelineAsBytes, err := yaml.Marshal(pipeline)
+		if err != nil {
+			slog.Error("unable to convert pipeline yaml to string", "err", err.Error())
+			return err
+		}
+
+		repoVisibility := dto.PUBLIC
+		if event.GetRepo().GetPrivate() {
+			repoVisibility = dto.PRIVATE
+		}
+
+        branch, err := getBranchNameFromRef(headBranch.GetRef())
+        if err != nil {
+            return err
+        }
+		publishRunDto := dto.PublishRunDto{
+			PipelineAsBytes: pipelineAsBytes,
+			Metadata: dto.Metadata{
+				Repository:     event.GetRepo().GetName(),
+				Branch:         branch,
+				RepoOwner:      event.GetRepo().GetOwner().GetName(),
+				RepoVisibility: repoVisibility,
+				VcsSource:      dto.GITHUB,
+				VcsToken:       GhToken,
+			},
+		}
+
+		publishBody, err := json.Marshal(publishRunDto)
+		if err != nil {
+            slog.Error("unable to marshal publishRunDto into Json", "err", err.Error())
+			return err
+		}
+
+        slog.Info("publishing pipeline run with", "id", pipelineRun.Id)
+		queue.PublishJob(pipelineRun.Id, publishBody)
+
+    }
+    return nil
 }
+
