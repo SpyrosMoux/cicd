@@ -139,6 +139,8 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 	return nil
 }
 
+// ProcessPullRequestEvent will run if the destination branch of the pull request
+// is in the list of pr: in the yaml
 func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) error {
 	headBranch := event.GetPullRequest().GetHead()
 	baseBranch := event.GetPullRequest().GetBase()
