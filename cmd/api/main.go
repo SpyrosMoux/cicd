@@ -35,7 +35,7 @@ func init() {
 	// Initialize RabbitMQ
 	queue.InitRabbitMQPublisher()
 
-    // Setup routes
+	// Setup routes
 	router = routes.SetupRouter()
 }
 

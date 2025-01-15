@@ -53,17 +53,17 @@ func CheckoutBranch(branchName string) error {
 	}
 	slog.Debug("executed successfully", "cmd", cmd.String(), "output", string(output))
 
-    // skip checkout if branch is already checked out
-    skip, err := shouldSkipCheckout(branchName)
-    if err != nil {
-        return err
-    }
+	// skip checkout if branch is already checked out
+	skip, err := shouldSkipCheckout(branchName)
+	if err != nil {
+		return err
+	}
 
-    if skip {
-        return nil
-    }
+	if skip {
+		return nil
+	}
 
-    slog.Debug("will checkout branch ", "branch", branchName)
+	slog.Debug("will checkout branch ", "branch", branchName)
 
 	cmd = exec.Command("git", "switch", "-c", branchName, "origin/"+branchName)
 
@@ -89,20 +89,20 @@ func isPrivate(repoVisibility dto.RepoVisibility) (bool, error) {
 	}
 }
 
-// shouldSkipCheckout returns true if the checked out branch is the same 
+// shouldSkipCheckout returns true if the checked out branch is the same
 // as the one we want to checkout. If they are different, then continue with the checkout
 func shouldSkipCheckout(desiredBranch string) (bool, error) {
-    cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 
-    currentBranch, err := cmd.CombinedOutput()
-    if err != nil {
-        return false, fmt.Errorf("error getting current branch name err=%s\n", err.Error())
-    }
+	currentBranch, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("error getting current branch name err=%s\n", err.Error())
+	}
 
-    currentBranch = bytes.Trim(currentBranch, "\n")
+	currentBranch = bytes.Trim(currentBranch, "\n")
 
-    if string(currentBranch) != desiredBranch {
-        return false, nil
-    }
-    return true, nil
+	if string(currentBranch) != desiredBranch {
+		return false, nil
+	}
+	return true, nil
 }

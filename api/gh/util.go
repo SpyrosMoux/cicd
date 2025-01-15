@@ -1,13 +1,14 @@
 package gh
 
 import (
-	"errors"
 	"fmt"
-	"github.com/google/go-github/v68/github"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/google/go-github/v68/github"
 )
 
 // downloadYAMLContent downloads the content of a given raw GitHub url
@@ -69,14 +70,35 @@ func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
 	return shouldRun
 }
 
+// matchPullRequestEventWithBranch matches the base branch (where the PR points to) with the list
+// of branches mentioned in the pr: section of the yaml. If there is match return true else false
+func matchPullRequestEventWithBranch(event *github.PullRequestEvent, branches []string) bool {
+	branchName := event.GetPullRequest().GetBase().GetRef()
+
+	shouldRun := false
+	for _, branch := range branches {
+		if branch == "*" {
+			shouldRun = true
+			break
+		}
+
+		if branchName == branch {
+			slog.Info("matching pull request event for", "branch", branch)
+			shouldRun = true
+		}
+	}
+
+	return shouldRun
+}
+
 func getBranchNameFromRef(ref string) (string, error) {
 	if !strings.Contains(ref, "refs/heads/") {
-		return "", errors.New("ref does not contain refs/heads/")
+		return ref, nil
 	}
 
 	parts := strings.SplitAfter(ref, "refs/heads/")
 	if len(parts) != 2 {
-		return "", errors.New("error getting branch name from ref " + ref)
+		return "", fmt.Errorf("failed to get branch name from ref %v\n", ref)
 	}
 
 	return parts[1], nil
