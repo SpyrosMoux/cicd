@@ -192,7 +192,7 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 			Metadata: dto.Metadata{
 				Repository:     event.GetRepo().GetName(),
 				Branch:         branch,
-				RepoOwner:      event.GetRepo().GetOwner().GetName(),
+				RepoOwner:      event.GetRepo().GetOwner().GetLogin(),
 				RepoVisibility: repoVisibility,
 				VcsSource:      dto.GITHUB,
 				VcsToken:       GhToken,
