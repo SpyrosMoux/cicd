@@ -1,6 +1,8 @@
 package pipelineruns
 
 import (
+	"fmt"
+
 	"github.com/spyrosmoux/cicd/api/config"
 	"gorm.io/gorm"
 )
@@ -26,7 +28,7 @@ func (repo *repository) FindAll() (*[]PipelineRun, error) {
 	var runs *[]PipelineRun
 	result := config.DB.Find(&runs)
 	if result.Error != nil {
-		return &[]PipelineRun{}, result.Error
+		return &[]PipelineRun{}, fmt.Errorf("unable to fetch pipeline runs from db, err=%s", result.Error)
 	}
 
 	return runs, nil

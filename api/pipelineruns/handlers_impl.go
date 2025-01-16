@@ -2,8 +2,6 @@ package pipelineruns
 
 import (
 	"github.com/gin-gonic/gin"
-	"log"
-	"net/http"
 )
 
 type handler struct {
@@ -15,21 +13,18 @@ func NewHandler(svc Service) Handler {
 }
 
 func (h *handler) HandleGetPipelineRuns(c *gin.Context) {
-	runs, err := h.svc.GetPipelineRuns()
-	if err != nil {
-		log.Println(err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	response := h.svc.GetPipelineRuns()
+	if response.Error != "" {
+		c.AbortWithStatusJSON(response.Status, response)
 	}
-
-	c.JSON(http.StatusOK, runs)
+	c.JSON(response.Status, response)
 }
 
 func (h *handler) HandleUpdatePipelineRun(ctx *gin.Context) {
-	updatedPipelineRun, err := h.svc.UpdatePipelineRun(ctx)
-	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	response := h.svc.UpdatePipelineRun(ctx)
+	if response.Error != "" {
+		ctx.AbortWithStatusJSON(response.Status, response)
 	}
 
-	ctx.JSON(http.StatusOK, updatedPipelineRun)
+	ctx.JSON(response.Status, response)
 }
