@@ -26,7 +26,7 @@ func (svc *service) GetPipelineRuns() dto.ResponseDto {
 func (svc *service) UpdatePipelineRun(ctx *gin.Context) dto.ResponseDto {
 	runId := ctx.Param("id")
 
-	var run *PipelineRun
+	var run dto.UpdatePipelineRunDto
 	err := ctx.ShouldBindJSON(&run)
 	if err != nil {
 		return dto.NewResponseDto(http.StatusInternalServerError, "", err.Error(), "")

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/spyrosmoux/cicd/api/pipelineruns"
-	"github.com/spyrosmoux/cicd/common/dto"
 	"net/http"
 	"time"
+
+	"github.com/spyrosmoux/cicd/common/dto"
 )
 
 // Client acts as an SDK so the Runner can communicate with the API
@@ -25,7 +25,7 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) UpdatePipelineRun(pipelineRunId string, updatePipelineRunDto dto.UpdatePipelineRunDto) (*pipelineruns.PipelineRun, error) {
+func (c *Client) UpdatePipelineRun(pipelineRunId string, updatePipelineRunDto dto.UpdatePipelineRunDto) (*dto.ResponseDto, error) {
 	url := fmt.Sprintf("%s/runs/%s", c.BaseURL, pipelineRunId)
 
 	payload, err := json.Marshal(updatePipelineRunDto)
@@ -47,10 +47,10 @@ func (c *Client) UpdatePipelineRun(pipelineRunId string, updatePipelineRunDto dt
 		return nil, fmt.Errorf("failed to update pipeline run: %s", resp.Status)
 	}
 
-	var updatedPipelineRun pipelineruns.PipelineRun
-	if err := json.NewDecoder(resp.Body).Decode(&updatedPipelineRun); err != nil {
+	var responseDto dto.ResponseDto
+	if err := json.NewDecoder(resp.Body).Decode(&responseDto); err != nil {
 		return nil, err
 	}
 
-	return &updatedPipelineRun, nil
+	return &responseDto, nil
 }
