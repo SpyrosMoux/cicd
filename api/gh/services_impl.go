@@ -86,16 +86,16 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 
 	// Publish all triggered validPipelines
 	for _, pipeline := range validPipelines {
-		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref)
+		pipelineRun := pipelineruns.NewPipelineRun(*event.Repo.Name, *event.Ref, *event.Sender.Login, pipelineruns.PUSH)
 
 		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
 			fmt.Printf("No matching push event for branch %s\n", *event.Ref)
 			continue
 		}
 
-		err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
-		if err != nil {
-			log.Printf("Failed to add pipeline run: %v", err)
+		response := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
+		if response.Error != "" {
+			log.Printf("Failed to add pipeline run: %v", response.Error)
 			return err
 		}
 
@@ -161,16 +161,16 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 	}
 
 	for _, pipeline := range validPipelines {
-		pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef())
+		pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef(), event.GetSender().GetLogin(), pipelineruns.PR)
 
 		if !matchPullRequestEventWithBranch(event, pipeline.Triggers.PR) {
 			slog.Info("no matching base", "branch", baseBranch.GetRef())
 			continue
 		}
 
-		err := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
-		if err != nil {
-			slog.Error("failed to add pipelineRun", "err", err.Error())
+		response := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
+		if response.Error != "" {
+			slog.Error("failed to add pipelineRun", "err", response.Error)
 			return err
 		}
 
