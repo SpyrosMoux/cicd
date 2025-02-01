@@ -1,13 +1,16 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/cicd/api/config"
+	"github.com/spyrosmoux/cicd/api/gitrepositories"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/api/pipelines"
 	"github.com/spyrosmoux/cicd/api/routes"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/queue"
-	"log"
 )
 
 var (
@@ -30,7 +33,7 @@ func init() {
 
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
-	config.Init(dsn, &pipelineruns.PipelineRun{})
+	config.Init(dsn, &pipelineruns.PipelineRun{}, &gitrepositories.GitRepository{}, &pipelines.Pipeline{})
 
 	// Initialize RabbitMQ
 	queue.InitRabbitMQPublisher()
