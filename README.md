@@ -4,6 +4,8 @@ FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker con
 
 ## How It Works
 
+For full documentation, visit: [FlowForge Docs](https://docs.flowforge.spyrosmoux.com/)
+
 1. You set up FlowForge by providing a URL for its API.
 2. You configure webhooks on your repositories to send events to this API.
 3. When an event is received, FlowForge determines which pipeline to run.
