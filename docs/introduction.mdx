@@ -1,0 +1,58 @@
+---
+title: 'Introduction'
+---
+import SnippetDockerCompose from '/snippets/snippet-docker-compose.mdx';
+
+# Welcome to FlowForge
+
+FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker containers. It is designed to be lightweight, easy to deploy, and integrates seamlessly with your repositories.
+
+## Key Features
+
+- 🚀 **Self-hostable**: Run it on your own infrastructure.
+- 🐳 **Docker-based**: Pipelines execute inside Docker containers.
+- ☁️ **Kubernetes Support**: Deploy in Kubernetes with future autoscaling capabilities.
+- 🔗 **Webhook-driven**: Automate builds with repository webhooks.
+
+## Getting Started
+
+### Installation
+
+FlowForge can be installed using Docker Compose:
+
+Example docker-compose.yaml:
+
+<SnippetDockerCompose />
+
+Run it with the following command:
+
+```sh
+docker compose up -d
+```
+
+    Check out the detailed instructions [here](/setup)
+
+### Configuring Webhooks
+
+To trigger builds automatically, configure webhooks in your repository to send events to your FlowForge API endpoint.
+
+## Necessary Parameters
+
+To configure FlowForge properly, ensure you provide the following parameters:
+- **DB_USER**: Username of the FlowForge DB.
+- **DB_PASS**: Password for the FlowForge DB user.
+- **GH_WEBHOOK_SECRET**: Secret key for validating incoming GitHub webhooks.
+- **RABBITMQ_USER**: Username for RabbitMQ user.
+- **RABBITMQ_PASSWORD**: Password for RabbitMQ user.
+- **HOST_NAME**: The host name used to expose the API.
+
+## How It Works
+
+1. A developer pushes code to a repository.
+2. A webhook sends a notification to FlowForge.
+3. FlowForge determines the appropriate pipeline and enqueues it in RabbitMQ.
+4. A runner picks up the job and executes it inside a Docker container.
+
+---
+
+Need help? Join the discussion by opening an issue or contributing to the project!

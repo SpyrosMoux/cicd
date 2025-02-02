@@ -1,0 +1,47 @@
+---
+title: 'Installation Guide'
+---
+
+import SnippetDockerCompose from '/snippets/snippet-docker-compose.mdx'
+import SnippetEnvVars from '/snippets/snippet-env-vars.mdx'
+
+This guide will help you get FlowForge up and running on your server. We'll walk you through installing FlowForge using Docker Compose, configuring the necessary files, and setting up webhooks.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Docker** and **Docker Compose** (Make sure Docker is running).
+- A **domain name** for your server to configure webhooks correctly.
+- Basic familiarity with **Docker Compose** and configuring `.yml` files.
+
+---
+
+## Step 1: Get the docker-compose.yaml
+<SnippetDockerCompose />
+
+## Step 2: Set Up .env File
+
+#### Necessary Parameters
+
+To configure FlowForge properly, ensure you provide the following parameters:
+- **DB_USER**: Username of the FlowForge DB.
+- **DB_PASS**: Password for the FlowForge DB user.
+- **GH_WEBHOOK_SECRET**: Secret key for validating incoming GitHub webhooks.
+- **RABBITMQ_USER**: Username for RabbitMQ user.
+- **RABBITMQ_PASSWORD**: Password for RabbitMQ user.
+- **HOST_NAME**: The host name used to expose the API.
+
+Sample .env file:
+<SnippetEnvVars />
+
+## Step 3: Set Up Webhooks
+
+Check out this [guide](/essentials/setup-webhook)
+
+## Step 4: Deploy FlowForge
+
+Deploy FlowForge by running:
+```sh
+docker compose up -d
+```
