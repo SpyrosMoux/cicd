@@ -13,6 +13,7 @@ type PipelineRun struct {
 	Status        string `json:"status"`
 	Repository    string `json:"repository"`
 	Branch        string `json:"branch"`
+	Error         string `json:"error"`
 	TriggerType   string `json:"trigger_type"`
 	TriggeredBy   string `json:"triggered_by"`
 	TimeTriggered int64  `json:"time_triggered"`
@@ -38,12 +39,13 @@ func (t TriggerType) String() string {
 	}
 }
 
-func NewPipelineRun(repository, branch, triggeredBy string, triggerType TriggerType) *PipelineRun {
+func NewPipelineRun(repository, branch, error, triggeredBy string, triggerType TriggerType) *PipelineRun {
 	return &PipelineRun{
 		Id:            uuid.New().String(),
 		Status:        PENDING.String(),
 		Repository:    repository,
 		Branch:        branch,
+		Error:         error,
 		TriggerType:   triggerType.String(),
 		TriggeredBy:   triggeredBy,
 		TimeTriggered: time.Now().Unix(),
