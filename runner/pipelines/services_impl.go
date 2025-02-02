@@ -1,7 +1,6 @@
 package pipelines
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -54,7 +53,7 @@ func (svc *service) CleanupRun() error {
 
 	err = os.RemoveAll(pathToRemove)
 	if err != nil {
-		slog.Error("Error removing temporary directory " + pathToRemove + ": " + err.Error())
+		slog.Error("failed to remove temporary directory ", "dir", pathToRemove, "err", err)
 		return err
 	}
 
@@ -74,8 +73,13 @@ func (svc *service) ExecuteStep(step Step, variables map[string]string) error {
 	cmd := exec.Command("sh", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.New("error executing step " + step.Name + ": " + err.Error() + ", output: " + string(output))
+		return fmt.Errorf("failure executing step step=%s, err=%s", step.Name, err.Error())
 	}
+
+	if strings.Contains(string(output), "err") {
+		return fmt.Errorf("failure executing step step=%s, err=%v", step.Name, string(output))
+	}
+
 	slog.Info("Output: " + string(output))
 	return nil
 }
@@ -110,13 +114,9 @@ func (svc *service) RunPipeline(pipeline Pipeline, runMetadata dto.Metadata) err
 
 	for _, job := range pipeline.Jobs {
 		slog.Info("Running job: " + job.Name)
-		err := svc.ExecuteJob(job, pipeline.Variables)
+		err = svc.ExecuteJob(job, pipeline.Variables)
 		if err != nil {
-			err2 := svc.CleanupRun()
-			if err2 != nil {
-				return err2
-			}
-			slog.Error("Error executing job: " + err.Error())
+			slog.Error("failed to run pipeline", "name", job.Name, "err", err)
 			return err
 		}
 	}

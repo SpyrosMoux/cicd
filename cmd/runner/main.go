@@ -63,10 +63,9 @@ func main() {
 			}
 
 			runResult := true
-			err = svc.RunPipeline(pipeline, publishRunDto.Metadata)
-			if err != nil {
+			runError := svc.RunPipeline(pipeline, publishRunDto.Metadata)
+			if runError != nil {
 				runResult = false
-				slog.Error("Failed to run pipeline with error: " + err.Error())
 			}
 
 			// Acknowledge the message after successful processing
@@ -86,6 +85,7 @@ func main() {
 			} else {
 				_, err = client.UpdatePipelineRun(d.CorrelationId, dto.UpdatePipelineRunDto{
 					Status:    pipelineruns.FAILED.String(),
+					Error:     runError.Error(),
 					TimeEnded: time.Now().Unix(),
 				})
 				if err != nil {

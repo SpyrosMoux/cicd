@@ -38,6 +38,7 @@ func (svc *service) UpdatePipelineRun(ctx *gin.Context) dto.ResponseDto {
 	}
 
 	savedRun.Status = run.Status
+	savedRun.Error = run.Error // will be empty if no error
 
 	if run.TimeStarted != 0 {
 		savedRun.TimeStarted = run.TimeStarted
