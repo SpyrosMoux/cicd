@@ -1,0 +1,24 @@
+```sh
+### API ###
+API_PORT=8080
+DB_HOST=host.docker.internal
+DB_PORT=5433
+DB_USER=api_user
+DB_PASS=somePassword
+DB_NAME=api
+GH_WEBHOOK_SECRET=someSecret
+GIN_MODE=release
+GH_TOKEN=your_token
+
+### Runner ###
+API_BASE_URL=http://host.docker.internal:8080/app/cicd/api
+
+### Common ###
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_USER=guest
+RABBITMQ_PASSWORD=guest
+RABBITMQ_PORT=5672
+
+### Traefik ###
+HOST_NAME=your.domain.com
+```

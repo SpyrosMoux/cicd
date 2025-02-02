@@ -15,8 +15,3 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-
-  web:
-    image: ghcr.io/spyrosmoux/flowforge-web
-    ports:
-      - "3000:80"

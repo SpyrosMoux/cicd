@@ -1,0 +1,64 @@
+---
+title: 'Setting Up a GitHub Webhook for Your Repository'
+description: 'To integrate GitHub with external services or trigger specific actions on events such as pushes, issues, pull requests, etc., you can configure a webhook for your repository. Follow the steps below to set up a GitHub webhook and customize its behavior.'
+icon: 'plug'
+---
+
+## Prerequisites
+Before setting up the webhook, make sure you have:
+- Admin or write access to the repository.
+- A server endpoint or service URL to handle incoming webhook payloads.
+- (Optional) A secret to secure the webhook.
+
+## Steps to Set Up a Webhook
+
+### 1. Go to Your GitHub Repository
+Navigate to your GitHub repository where you want to set up the webhook.
+
+### 2. Access the Webhooks Settings
+1. On the repository page, click on the **Settings** tab.
+2. In the left sidebar, click on **Webhooks**.
+
+### 3. Add a New Webhook
+1. Click the **Add webhook** button.
+2. In the **Payload URL** field, enter the URL where you want to receive the webhook events (e.g., your API endpoint).
+3. Set the **Content type** to `application/json`.
+
+### 4. Choose Events to Trigger the Webhook
+Under **Which events would you like to trigger this webhook?**:
+- Pushes
+- Pull Requests
+
+We currently only support `Push` and `Pull Request` events
+
+### 5. Add a Secret (Optional)
+To add a secret for securing the webhook, follow these steps:
+- Scroll down to the **Secret** field.
+- Enter a secret key (a random string of your choice). This secret will be used to generate a hash signature to verify that the requests are coming from GitHub.
+
+Once you've set the secret, GitHub will send a `X-Hub-Signature` header with each payload, which we will use to validate the request by comparing it with your secret.
+
+> **Note**: Be sure to store your secret securely, as it is needed to verify the authenticity of the payloads.
+
+### 6. Enable/Disable SSL Verification
+GitHub provides an option to enable or disable SSL verification to ensure the webhook payload is sent over a secure connection.
+
+- **Enable SSL verification (recommended)**: This ensures the webhook is only sent to secure servers with valid SSL certificates. This is the default setting.
+- **Disable SSL verification**: If you are using an internal or self-signed certificate for your server, you may want to disable SSL verification. To do this, simply uncheck the **SSL verification** checkbox.
+
+> **Important**: Disabling SSL verification can expose your webhook to man-in-the-middle attacks and should only be done if absolutely necessary for specific use cases.
+
+### 7. Save the Webhook
+Once you've configured your webhook settings, click the **Add webhook** button to save it.
+
+You should now see your webhook listed in the Webhooks section of the repository settings.
+
+## Verifying the Webhook
+After adding the webhook, GitHub will attempt to send a test payload to the specified URL. You can verify that the webhook is set up correctly by checking your server logs or endpoint to confirm the payload was received.
+
+> If you set a secret, GitHub will also include a `X-Hub-Signature` header, which you can use to verify the integrity of the payload.
+
+## Conclusion
+You’ve successfully set up a GitHub webhook for your repository. By specifying the desired events, adding a secret for security, and enabling/disabling SSL verification, you can customize how your server handles GitHub events.
+
+For additional information on GitHub webhooks, refer to the [official GitHub webhook documentation](https://docs.github.com/en/webhooks).

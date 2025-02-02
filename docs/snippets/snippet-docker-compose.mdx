@@ -1,4 +1,4 @@
----
+```yaml
 networks:
   cicd_net:
 
@@ -71,7 +71,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.runner
     env_file:
-      - ../.env.docker
+      - .env
     networks:
       - cicd_net
     privileged: true
@@ -93,6 +93,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - ../.env.docker
+      - .env
     networks:
       - cicd_net
+```
