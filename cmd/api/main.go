@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/routes"
 	"github.com/spyrosmoux/cicd/common/helpers"
+	"github.com/spyrosmoux/cicd/common/logger"
 	"github.com/spyrosmoux/cicd/common/queue"
-	"log"
 )
 
 var (
@@ -18,6 +19,7 @@ var (
 	dbPass  string
 	dbName  string
 	router  *gin.Engine
+	logs    = logger.NewLogger()
 )
 
 func init() {
@@ -30,7 +32,10 @@ func init() {
 
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
-	config.Init(dsn, &pipelineruns.PipelineRun{})
+	err := config.Init(dsn, &pipelineruns.PipelineRun{})
+	if err != nil {
+		logs.Fatal(err)
+	}
 
 	// Initialize RabbitMQ
 	queue.InitRabbitMQPublisher()
@@ -40,6 +45,8 @@ func init() {
 }
 
 func main() {
-	log.Printf("Starting server on port %s", apiPort)
-	log.Fatal(router.Run(":" + apiPort))
+	logs.WithFields(logrus.Fields{
+		"port": apiPort,
+	}).Info("starting server")
+	logs.Fatal(router.Run(":" + apiPort))
 }

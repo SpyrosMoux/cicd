@@ -1,14 +1,18 @@
 package helpers
 
 import (
-	"github.com/joho/godotenv"
-	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
+	"github.com/spyrosmoux/cicd/common/logger"
 )
+
+var logs = logger.NewLogger()
 
 func LoadEnvVariable(variable string) string {
 	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found, attempting to read from host environment variables")
+		logs.Warn("no .env file found, attempting to read variables from host environment")
 	}
 
 	variableValue := getEnvOrExit(variable)
@@ -19,7 +23,9 @@ func LoadEnvVariable(variable string) string {
 func getEnvOrExit(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		log.Fatalf("Environment variable %s not set", key)
+		logs.WithFields(logrus.Fields{
+			"variable": key,
+		}).Fatal("environment variable not set")
 	}
 	return value
 }

@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"log/slog"
 
 	"github.com/google/go-github/v68/github"
+	"github.com/sirupsen/logrus"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/queue"
@@ -18,10 +17,14 @@ import (
 
 type service struct {
 	pipelineRunsService pipelineruns.Service
+	logger              *logrus.Logger
 }
 
-func NewService(pipelineRunsService pipelineruns.Service) Service {
-	return &service{pipelineRunsService: pipelineRunsService}
+func NewService(pipelineRunsService pipelineruns.Service, logger *logrus.Logger) Service {
+	return &service{
+		pipelineRunsService: pipelineRunsService,
+		logger:              logger,
+	}
 }
 
 func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branchName string) ([]pipelines.Pipeline, error) {
@@ -39,7 +42,9 @@ func (svc *service) FetchValidPipelines(repoOwner string, repoName string, branc
 	var validYAMLs []pipelines.Pipeline
 
 	for _, file := range contents {
-		fmt.Printf("Found file: %s\n", file.GetName())
+		svc.logger.WithFields(logrus.Fields{
+			"file": file.GetName(),
+		}).Info("found file")
 
 		downloadURL := file.GetDownloadURL()
 		if downloadURL == "" {
@@ -76,11 +81,15 @@ func (svc *service) ProcessEvent(event interface{}) error {
 }
 
 func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
-	fmt.Printf("Received a push event for ref %s\n", *event.Ref)
+	svc.logger.WithFields(logrus.Fields{
+		"ref": *event.Ref,
+	}).Info("received a push event for")
 
 	validPipelines, err := svc.FetchValidPipelines(*event.Repo.Owner.Name, *event.Repo.Name, *event.Ref)
 	if err != nil {
-		log.Printf("Failed to fetch pipeline config: %v", err)
+		svc.logger.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("failed to fetch pipeline config")
 		return err
 	}
 
@@ -90,18 +99,22 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 
 		if !matchPushEventWithBranch(event, pipeline.Triggers.Branch) {
 			fmt.Printf("No matching push event for branch %s\n", *event.Ref)
+			svc.logger.WithFields(logrus.Fields{
+				"ref": *event.Ref,
+			}).Info("no matching push event for branch")
 			continue
 		}
 
 		response := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
 		if response.Error != "" {
-			log.Printf("Failed to add pipeline run: %v", response.Error)
+			err := errors.New(response.Error)
+			svc.logger.WithError(err).Error("failed to add pipeline")
 			return err
 		}
 
 		pipelineAsBytes, err := yaml.Marshal(pipeline)
 		if err != nil {
-			slog.Error("Unable to convert pipeline yaml to string")
+			svc.logger.WithError(err).Error("unable to convert pipeline yaml to string")
 			return err
 		}
 
@@ -128,11 +141,13 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 
 		publishBody, err := json.Marshal(publishRunDto)
 		if err != nil {
-			slog.Error("Error marshalling publishRunDto into Json, " + err.Error())
+			svc.logger.WithError(err).Error("unable to marshal publishRunDto into Json")
 			return err
 		}
 
-		fmt.Println("Publishing pipeline run with id: " + pipelineRun.Id)
+		svc.logger.WithFields(logrus.Fields{
+			"pipelineRunId": pipelineRun.Id,
+		}).Info("publishing pipeline run")
 		queue.PublishJob(pipelineRun.Id, publishBody)
 	}
 
@@ -144,19 +159,30 @@ func (svc *service) ProcessPushEvent(event *github.PushEvent) error {
 func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) error {
 	headBranch := event.GetPullRequest().GetHead()
 	baseBranch := event.GetPullRequest().GetBase()
-	slog.Info("received a PullRequestEvent for", "repo", event.GetRepo().GetName(), "headRef", headBranch.GetRef(), "baseRef", baseBranch.GetRef())
+	svc.logger.WithFields(logrus.Fields{
+		"repo":    event.GetRepo().GetName(),
+		"headRef": headBranch.GetRef(),
+		"baseRef": baseBranch.GetRef(),
+	}).Info("received a PullRequestEvent")
 
 	switch event.GetAction() {
 	case "opened", "reopened", "synchronize":
-		slog.Debug("valid", "action", event.GetAction())
+		svc.logger.WithFields(logrus.Fields{
+			"action": event.GetAction(),
+		}).Debug("valid")
 	default:
-		slog.Warn("skipping pull request event", "action", event.GetAction())
+		svc.logger.WithFields(logrus.Fields{
+			"action": event.GetAction(),
+		}).Warn("skipping pull request event")
 		return nil
 	}
 
 	validPipelines, err := svc.FetchValidPipelines(headBranch.GetRepo().GetOwner().GetLogin(), headBranch.GetRepo().GetName(), headBranch.GetRef())
 	if err != nil {
-		slog.Error("unanble to fetch valid pipelines", "repo", headBranch.GetRepo().GetName(), "err", err.Error())
+		svc.logger.WithFields(logrus.Fields{
+			"repo": headBranch.GetRepo().GetName(),
+			"err":  err,
+		}).Error("unable to fetch valid pipelines")
 		return err
 	}
 
@@ -164,19 +190,21 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 		pipelineRun := pipelineruns.NewPipelineRun(headBranch.GetRepo().GetName(), headBranch.GetRef(), "", event.GetSender().GetLogin(), pipelineruns.PR)
 
 		if !matchPullRequestEventWithBranch(event, pipeline.Triggers.PR) {
-			slog.Info("no matching base", "branch", baseBranch.GetRef())
+			svc.logger.WithFields(logrus.Fields{
+				"branch": baseBranch.GetRef(),
+			}).Info("no matching base")
 			continue
 		}
 
 		response := svc.pipelineRunsService.AddPipelineRun(pipelineRun)
 		if response.Error != "" {
-			slog.Error("failed to add pipelineRun", "err", response.Error)
+			svc.logger.WithError(err).Error("failed to add pipelineRun")
 			return err
 		}
 
 		pipelineAsBytes, err := yaml.Marshal(pipeline)
 		if err != nil {
-			slog.Error("unable to convert pipeline yaml to string", "err", err.Error())
+			svc.logger.WithError(err).Error("unable to convert pipeline yaml to string")
 			return err
 		}
 
@@ -203,11 +231,13 @@ func (svc *service) ProcessPullRequestEvent(event *github.PullRequestEvent) erro
 
 		publishBody, err := json.Marshal(publishRunDto)
 		if err != nil {
-			slog.Error("unable to marshal publishRunDto into Json", "err", err.Error())
+			svc.logger.WithError(err).Error("unable to marshal pipelineRunDto into Json")
 			return err
 		}
 
-		slog.Info("publishing pipeline run with", "id", pipelineRun.Id)
+		svc.logger.WithFields(logrus.Fields{
+			"id": pipelineRun.Id,
+		}).Info("publishing pipeline run")
 		queue.PublishJob(pipelineRun.Id, publishBody)
 
 	}

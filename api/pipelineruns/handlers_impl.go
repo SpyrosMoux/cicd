@@ -16,6 +16,7 @@ func (h *handler) HandleGetPipelineRuns(c *gin.Context) {
 	response := h.svc.GetPipelineRuns()
 	if response.Error != "" {
 		c.AbortWithStatusJSON(response.Status, response)
+		return
 	}
 	c.JSON(response.Status, response)
 }
@@ -24,6 +25,7 @@ func (h *handler) HandleUpdatePipelineRun(ctx *gin.Context) {
 	response := h.svc.UpdatePipelineRun(ctx)
 	if response.Error != "" {
 		ctx.AbortWithStatusJSON(response.Status, response)
+		return
 	}
 
 	ctx.JSON(response.Status, response)

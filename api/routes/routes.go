@@ -4,13 +4,16 @@ import (
 	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/gh"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/common/logger"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
+
+	router.Use(gin.Recovery())
 
 	/* SuperTokens Routers */
 
@@ -26,8 +29,10 @@ func SetupRouter() *gin.Engine {
 	pipelineRunsHandler := pipelineruns.NewHandler(pipelineRunsSvc)
 	pipelineruns.Routes(router, pipelineRunsHandler)
 
-	ghService := gh.NewService(pipelineRunsSvc)
-	ghHandler := gh.NewHandler(ghService)
+	logger := logger.NewLogger()
+
+	ghService := gh.NewService(pipelineRunsSvc, logger)
+	ghHandler := gh.NewHandler(ghService, logger)
 	gh.Routes(router, ghHandler)
 
 	return router

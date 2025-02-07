@@ -2,20 +2,22 @@ package pipelines
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/runner/dirmanagement"
 	"github.com/spyrosmoux/cicd/runner/git"
 )
 
-type service struct{}
+type service struct {
+	logger *logrus.Logger
+}
 
-func NewService() Service {
-	return &service{}
+func NewService(logger *logrus.Logger) Service {
+	return &service{logger: logger}
 }
 
 // PrepareRun clones the repo into the source directory
@@ -53,7 +55,7 @@ func (svc *service) CleanupRun() error {
 
 	err = os.RemoveAll(pathToRemove)
 	if err != nil {
-		slog.Error("failed to remove temporary directory ", "dir", pathToRemove, "err", err)
+		svc.logger.WithError(err).Error("failed to remove temporary directory")
 		return err
 	}
 
@@ -62,13 +64,18 @@ func (svc *service) CleanupRun() error {
 		return err
 	}
 
-	slog.Info("Temporary directory " + pathToRemove + " removed successfully")
+	svc.logger.WithFields(logrus.Fields{
+		"directory": pathToRemove,
+	}).Info("temporary directory removed successfully")
 	return nil
 }
 
 // ExecuteStep executes a single step
 func (svc *service) ExecuteStep(step Step, variables map[string]string) error {
-	slog.Info("Executing step: " + step.Name)
+	svc.logger.WithFields(logrus.Fields{
+		"step": step.Name,
+	}).Info("executing step")
+
 	command := svc.SubstituteUserVariables(step.Run, variables)
 	cmd := exec.Command("sh", "-c", command)
 	output, err := cmd.CombinedOutput()
@@ -80,13 +87,15 @@ func (svc *service) ExecuteStep(step Step, variables map[string]string) error {
 		return fmt.Errorf("failure executing step step=%s, err=%v", step.Name, string(output))
 	}
 
-	slog.Info("Output: " + string(output))
+	svc.logger.Info("output ", string(output))
 	return nil
 }
 
 // ExecuteJob executes all steps in a job
 func (svc *service) ExecuteJob(job Job, variables map[string]string) error {
-	slog.Info("Executing job: " + job.Name)
+	svc.logger.WithFields(logrus.Fields{
+		"job": job.Name,
+	}).Info("executing job")
 	for _, step := range job.Steps {
 		err := svc.ExecuteStep(step, variables)
 		if err != nil {
@@ -101,7 +110,7 @@ func (svc *service) RunPipeline(pipeline Pipeline, runMetadata dto.Metadata) err
 	defer func(svc *service) {
 		err := svc.CleanupRun()
 		if err != nil {
-			slog.Error(err.Error())
+			svc.logger.Error(err)
 		}
 	}(svc)
 
@@ -113,10 +122,15 @@ func (svc *service) RunPipeline(pipeline Pipeline, runMetadata dto.Metadata) err
 	svc.SubstitutePredefinedVariables(pipeline, PredefinedVars)
 
 	for _, job := range pipeline.Jobs {
-		slog.Info("Running job: " + job.Name)
+		svc.logger.WithFields(logrus.Fields{
+			"job": job.Name,
+		}).Info("running job")
 		err = svc.ExecuteJob(job, pipeline.Variables)
 		if err != nil {
-			slog.Error("failed to run pipeline", "name", job.Name, "err", err)
+			svc.logger.WithFields(logrus.Fields{
+				"name": job.Name,
+				"err":  err,
+			}).Error("failed to run pipeline")
 			return err
 		}
 	}
