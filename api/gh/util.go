@@ -3,8 +3,6 @@ package gh
 import (
 	"fmt"
 	"io"
-	"log"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -50,7 +48,6 @@ func downloadYAMLContent(downloadUrl string) ([]byte, error) {
 func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
 	branchName, err := getBranchNameFromRef(event.GetRef())
 	if err != nil {
-		log.Printf("Failed to get branch name from ref %s: %v", event.GetRef(), err)
 		return false
 	}
 
@@ -62,7 +59,6 @@ func matchPushEventWithBranch(event *github.PushEvent, branches []string) bool {
 		}
 
 		if branchName == branch {
-			fmt.Printf("Matching push event for branch %s\n", branch)
 			shouldRun = true
 		}
 	}
@@ -83,7 +79,6 @@ func matchPullRequestEventWithBranch(event *github.PullRequestEvent, branches []
 		}
 
 		if branchName == branch {
-			slog.Info("matching pull request event for", "branch", branch)
 			shouldRun = true
 		}
 	}

@@ -1,8 +1,9 @@
 package config
 
 import (
+	"fmt"
+
 	"gorm.io/driver/postgres"
-	"log"
 
 	"gorm.io/gorm"
 )
@@ -10,17 +11,17 @@ import (
 var DB *gorm.DB
 
 // Init initializes the database connection and runs migrations.
-func Init(dsn string, models ...interface{}) {
+func Init(dsn string, models ...interface{}) error {
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
+		return fmt.Errorf("unable to connect to database, %w", err)
 	}
 
 	// Run migrations
 	err = DB.AutoMigrate(models...)
 	if err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
+		return err
 	}
-	log.Println("Database connection established and migrations ran successfully.")
+	return nil
 }

@@ -2,9 +2,7 @@ package queue
 
 import (
 	"github.com/spyrosmoux/cicd/common/helpers"
-	"log"
-	"log/slog"
-	"os"
+	"github.com/spyrosmoux/cicd/common/logger"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -16,6 +14,7 @@ var (
 	rabbitmqUser     = helpers.LoadEnvVariable("RABBITMQ_USER")
 	rabbitmqPassword = helpers.LoadEnvVariable("RABBITMQ_PASSWORD")
 	rabbitmqPort     = helpers.LoadEnvVariable("RABBITMQ_PORT")
+	logs             = logger.NewLogger()
 )
 
 // InitRabbitMQPublisher initializes the connection to RabbitMQ for the Api
@@ -31,7 +30,7 @@ func InitRabbitMQPublisher() {
 		nil,
 	)
 	if err != nil {
-		log.Fatalf("Failed to declare a queue: %v", err)
+		logs.WithError(err).Fatal("unable to initialize publisher")
 	}
 }
 
@@ -49,7 +48,7 @@ func PublishJob(pipelineRunId string, body []byte) {
 		},
 	)
 	if err != nil {
-		log.Fatalf("Failed to publish a message: %v", err)
+		logs.WithError(err).Error("failed to publish message")
 	}
 }
 
@@ -66,13 +65,13 @@ func InitRabbitMQConsumer() <-chan amqp.Delivery {
 		nil,
 	)
 	if err != nil {
-		slog.Error("Failed to declare a queue: " + err.Error())
+		logs.WithError(err).Error("failed to declare a queue")
 	}
 
 	// Set QoS (Quality of Service) to prefetch 1 message at a time
 	err = ch.Qos(1, 0, false)
 	if err != nil {
-		slog.Error("Failed to set QoS: " + err.Error())
+		logs.WithError(err).Error("failed to set QoS")
 	}
 
 	msgs, err := ch.Consume(
@@ -85,7 +84,7 @@ func InitRabbitMQConsumer() <-chan amqp.Delivery {
 		nil,
 	)
 	if err != nil {
-		slog.Error("Failed to register a consumer: " + err.Error())
+		logs.WithError(err).Error("failed to register a consumer")
 	}
 
 	return msgs
@@ -95,14 +94,12 @@ func establishConnection() *amqp.Channel {
 	var err error
 	conn, err = amqp.Dial("amqp://" + rabbitmqUser + ":" + rabbitmqPassword + "@" + rabbitmqHost + ":" + rabbitmqPort + "/")
 	if err != nil {
-		slog.Error("failed to connect to RabbitMQ " + err.Error())
-		os.Exit(1)
+		logs.WithError(err).Fatal("failed to connect to RabbitMQ")
 	}
 
 	channel, err = conn.Channel()
 	if err != nil {
-		slog.Error("failed to open a channel: " + err.Error())
-		os.Exit(1)
+		logs.WithError(err).Fatal("failed to open a channel")
 	}
 
 	return channel

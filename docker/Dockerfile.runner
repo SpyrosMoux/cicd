@@ -12,7 +12,6 @@ COPY .. .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /runner cmd/runner/main.go
 
-# Deploy the application binary into a lean image
 FROM ubuntu AS build-release-stage
 RUN apt-get -y update \
     && apt-get -y install ca-certificates curl \
@@ -21,9 +20,9 @@ RUN apt-get -y update \
     && chmod a+r /etc/apt/keyrings/docker.asc
 
 RUN echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-      tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get -y update
 
 RUN apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
