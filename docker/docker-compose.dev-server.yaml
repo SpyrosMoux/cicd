@@ -1,98 +1,130 @@
 ---
 networks:
-  cicd_net:
+    cicd_net:
 
 services:
-  traefik:
-    image: traefik:2.10.7
-    container_name: traefik
-    restart: unless-stopped
-    volumes:
-      - ${PWD}/traefik:/etc/traefik
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/log/traefik/:/var/log/
-    networks:
-      - cicd_net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`${HOST_NAME}`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))"
-      - "traefik.http.routers.traefik.entrypoints=https"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.middlewares=traefik-strip"
-      - "traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik"
-    ports:
-      - "443:443"
-    command:
-      - "--api"
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedByDefault=false"
-      - "--entrypoints.http=false"
-      - "--entrypoints.http.http.redirections.entrypoint.to=https"
-      - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.https=true"
-      - "--entrypoints.https.address=:443"
-      - "--certificatesResolvers.letsencrypt.acme.email=spirosgsaaa@gmail.com"
-      - "--certificatesResolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
-      - "--certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=https"
-      - "--log=true"
-      - "--log.level=ERROR"
-      - "--log.filePath=/var/log/traefik.log"
-      - "--accesslog=true"
-      - "--accesslog.filepath=/var/log/access.log"
+    traefik:
+        image: traefik:2.10.7
+        container_name: traefik
+        restart: unless-stopped
+        volumes:
+            - ${PWD}/traefik:/etc/traefik
+            - /var/run/docker.sock:/var/run/docker.sock
+            - /var/log/traefik/:/var/log/
+        networks:
+            - cicd_net
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.traefik.rule=Host(`flowforge.spyrosmoux.com`) && (PathPrefix(`/traefik`) || PathPrefix(`/api`))"
+            - "traefik.http.routers.traefik.entrypoints=https"
+            - "traefik.http.routers.traefik.service=api@internal"
+            - "traefik.http.routers.traefik.tls=true"
+            - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+            - "traefik.http.routers.traefik.middlewares=traefik-strip"
+            - "traefik.http.middlewares.traefik-strip.stripprefix.prefixes=/traefik"
+        ports:
+            - "443:443"
+        command:
+            - "--api"
+            - "--api.dashboard=true"
+            - "--providers.docker=true"
+            - "--providers.docker.exposedByDefault=false"
+            - "--entrypoints.http=false"
+            - "--entrypoints.http.http.redirections.entrypoint.to=https"
+            - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
+            - "--entrypoints.https=true"
+            - "--entrypoints.https.address=:443"
+            - "--certificatesResolvers.letsencrypt.acme.email=spirosgsaaa@gmail.com"
+            - "--certificatesResolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+            - "--certificatesResolvers.letsencrypt.acme.httpChallenge.entryPoint=https"
+            - "--log=true"
+            - "--log.level=ERROR"
+            - "--log.filePath=/var/log/traefik.log"
+            - "--accesslog=true"
+            - "--accesslog.filepath=/var/log/access.log"
 
-  api-db:
-    image: postgres
-    container_name: api-db
-    ports:
-      - 5433:5432
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-api_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somePassword}
-      POSTGRES_DB: ${POSTGRES_DB:-api}
-    networks:
-      - cicd_net
+    api-db:
+        image: postgres
+        container_name: api-db
+        ports:
+            - 5433:5432
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-api_user}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somePassword}
+            POSTGRES_DB: ${POSTGRES_DB:-api}
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready", "-d", "api" ]
+            interval: 30s
+            timeout: 60s
+            retries: 5
+            start_period: 80s
+        depends_on:
+            - traefik
+        networks:
+            - cicd_net
 
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - cicd_net
+    rabbitmq:
+        image: rabbitmq:3.13-management
+        container_name: rabbitmq
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        healthcheck:
+            test: rabbitmq-diagnostics -q ping
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 10s
+        depends_on:
+            - traefik
+        networks:
+            - cicd_net
 
-  runner:
-    container_name: runner
-    image: ghcr.io/spyrosmoux/cicd/runner
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.runner
-    env_file:
-      - ../.env.docker
-    networks:
-      - cicd_net
-    privileged: true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    runner:
+        container_name: runner
+        image: ghcr.io/spyrosmoux/cicd/runner
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile.runner
+        env_file:
+            - ../.env.docker
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            api:
+                condition: service_healthy
+        networks:
+            - cicd_net
+        privileged: true
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
 
-  api:
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`${HOST_NAME}`) && PathPrefix(`/app/cicd/api`)"
-      - "traefik.http.routers.api.entrypoints=https"
-      - "traefik.http.routers.api.tls=true"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-    container_name: api
-    image: ghcr.io/spyrosmoux/cicd/api
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.api
-    ports:
-      - "8080:8080"
-    env_file:
-      - ../.env.docker
-    networks:
-      - cicd_net
+    api:
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.api.rule=Host(`flowforge.spyrosmoux.com`) && PathPrefix(`/app/cicd/api`)"
+            - "traefik.http.routers.api.entrypoints=https"
+            - "traefik.http.routers.api.tls=true"
+            - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+        container_name: api
+        image: ghcr.io/spyrosmoux/cicd/api
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile.api
+        ports:
+            - "8080:8080"
+        env_file:
+            - ../.env.docker
+        healthcheck:
+            test: [ "CMD-SHELL", "wget --spider -q http://localhost:8080/app/cicd/api/health || exit 1" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
+        depends_on:
+            api-db:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+        networks:
+            - cicd_net
