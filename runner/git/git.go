@@ -3,12 +3,20 @@ package git
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"github.com/spyrosmoux/cicd/common/logger"
 	"log/slog"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/spyrosmoux/cicd/common/dto"
 )
+
+var logs *logrus.Logger
+
+func init() {
+	logs = logger.NewLogger()
+}
 
 func CloneRepo(repoMeta dto.Metadata, dir string) error {
 	repoUrl := repoMeta.RepoOwner + "/" + repoMeta.Repository + ".git"
@@ -31,27 +39,37 @@ func CloneRepo(repoMeta dto.Metadata, dir string) error {
 
 	cmd := exec.Command("git", "clone", normalizedUrl, targetDir)
 
-	slog.Debug("executing", "cmd", cmd.String())
+	logs.WithFields(logrus.Fields{
+		"cmd": cmd.String(),
+	}).Info("executing")
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git clone failed output=%s", string(output))
 	}
 
-	slog.Debug("git clone succeeded", "output", string(output))
+	logs.WithFields(logrus.Fields{
+		"output": string(output),
+	}).Info("git clone succeeded")
 	return nil
 }
 
 func CheckoutBranch(branchName string) error {
 	cmd := exec.Command("git", "fetch", "origin")
 
-	slog.Debug("executing", "cmd", cmd.String())
+	logs.WithFields(logrus.Fields{
+		"cmd": cmd.String(),
+	}).Info("executing")
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error fetching origin, %s", err.Error())
 	}
-	slog.Debug("executed successfully", "cmd", cmd.String(), "output", string(output))
+
+	logs.WithFields(logrus.Fields{
+		"cmd":    cmd.String(),
+		"output": string(output),
+	}).Info("executed successfully")
 
 	// skip checkout if branch is already checked out
 	skip, err := shouldSkipCheckout(branchName)
@@ -65,16 +83,25 @@ func CheckoutBranch(branchName string) error {
 
 	slog.Debug("will checkout branch ", "branch", branchName)
 
+	logs.WithFields(logrus.Fields{
+		"branch": branchName,
+	}).Info("will checkout")
+
 	cmd = exec.Command("git", "switch", "-c", branchName, "origin/"+branchName)
 
-	slog.Debug("executing", "cmd", cmd.String())
+	logs.WithFields(logrus.Fields{
+		"cmd": cmd.String(),
+	}).Info("executing")
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error checking out remote branch %s, %s", branchName, err.Error())
 	}
 
-	slog.Debug("executed successfully", "cmd", cmd.String(), "output", string(output))
+	logs.WithFields(logrus.Fields{
+		"cmd":    cmd.String(),
+		"output": string(output),
+	}).Info("executed successfully")
 	return nil
 }
 
