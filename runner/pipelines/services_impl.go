@@ -84,11 +84,11 @@ func (svc *service) ExecuteStep(step Step, variables map[string]string) error {
 	}).Info("executing")
 
 	output, err := cmd.CombinedOutput()
+	svc.logger.Info("output ", string(output))
 	if err != nil {
 		return fmt.Errorf("failure executing step step=%s, err=%s", step.Name, err.Error())
 	}
 
-	svc.logger.Info("output ", string(output))
 	return nil
 }
 
