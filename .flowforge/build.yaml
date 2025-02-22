@@ -9,6 +9,6 @@ jobs:
     steps:
       - name: Build API & Runner
         run: |
-          cd $(SourcesDirectory)/cicd/
+          cd $(SourcesDirectory)/cicd
           pwd
           make build-all-docker
