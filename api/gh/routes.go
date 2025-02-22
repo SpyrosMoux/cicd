@@ -4,9 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Routes(route *gin.Engine, ghHandler Handler) {
-	routes := route.Group("/app/cicd/api/gh")
+func Routes(rg *gin.RouterGroup, ghHandler Handler) {
+	ghGroup := rg.Group("/gh")
 	{
-		routes.POST("/webhook", ghHandler.HandleWebhook)
+		ghGroup.POST("/webhook", ghHandler.HandleWebhook)
 	}
 }

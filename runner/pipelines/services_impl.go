@@ -78,13 +78,14 @@ func (svc *service) ExecuteStep(step Step, variables map[string]string) error {
 
 	command := svc.SubstituteUserVariables(step.Run, variables)
 	cmd := exec.Command("sh", "-c", command)
+
+	svc.logger.WithFields(logrus.Fields{
+		"cmd": cmd,
+	}).Info("executing")
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failure executing step step=%s, err=%s", step.Name, err.Error())
-	}
-
-	if strings.Contains(string(output), "err") {
-		return fmt.Errorf("failure executing step step=%s, err=%v", step.Name, string(output))
 	}
 
 	svc.logger.Info("output ", string(output))

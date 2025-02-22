@@ -1,13 +1,14 @@
 package routes
 
 import (
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/gh"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/logger"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func SetupRouter() *gin.Engine {
@@ -27,13 +28,23 @@ func SetupRouter() *gin.Engine {
 	pipelineRunsRepo := pipelineruns.NewRepository(config.DB)
 	pipelineRunsSvc := pipelineruns.NewService(pipelineRunsRepo)
 	pipelineRunsHandler := pipelineruns.NewHandler(pipelineRunsSvc)
-	pipelineruns.Routes(router, pipelineRunsHandler)
 
-	logger := logger.NewLogger()
+	logs := logger.NewLogger()
 
-	ghService := gh.NewService(pipelineRunsSvc, logger)
-	ghHandler := gh.NewHandler(ghService, logger)
-	gh.Routes(router, ghHandler)
+	ghService := gh.NewService(pipelineRunsSvc, logs)
+	ghHandler := gh.NewHandler(ghService, logs)
+
+	apiGroup := router.Group("/app/cicd/api")
+	{
+		gh.Routes(apiGroup, ghHandler)
+		pipelineruns.Routes(apiGroup, pipelineRunsHandler)
+		apiGroup.GET("/health", handleHealth)
+	}
 
 	return router
+}
+
+func handleHealth(ctx *gin.Context) {
+	response := dto.NewResponseDto(http.StatusOK, "I'm Alive!", "", "")
+	ctx.JSON(response.Status, response)
 }
