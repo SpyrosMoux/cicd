@@ -5,6 +5,7 @@ RUNNER_DIR = cmd/runner
 BUILD_DIR = build
 DOCKER_REPO = ghcr.io/spyrosmoux/cicd
 SMEE_URL = https://smee.io/vgX1mcHUonHXl1Hh
+PROXY_PORT ?= 8080
 PLATFORM = linux/amd64
 TAG ?= latest
 
@@ -52,7 +53,7 @@ deploy-dev-server:
 
 # Proxy webhook for local development
 proxy-webhook:
-	smee -u $(SMEE_URL) -p 8080 -P /app/cicd/api/gh/webhook
+	smee -u $(SMEE_URL) -p $(PROXY_PORT) -P /app/cicd/api/gh/webhook
 
 # Clean up builds and Docker containers
 clean:
@@ -60,3 +61,13 @@ clean:
 	docker compose -f docker/docker-compose.deps.yaml down
 	docker compose -f docker/docker-compose.runner.yaml down
 	docker compose -f docker/docker-compose.api.yaml down
+
+k8s:
+	kubectl apply -k kubernetes/kustomize/overlays/flowforge
+
+k8s-down:
+	kubectl delete -k kubernetes/kustomize/overlays/flowforge
+
+install-keda:
+	kustomize build kubernetes/kustomize/overlays/keda --enable-helm > keda.yaml
+	kubectl apply --server-side -f keda.yaml
