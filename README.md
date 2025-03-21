@@ -16,7 +16,7 @@ For full documentation, visit: [FlowForge Docs](https://docs.flowforge.spyrosmou
 
 - Runs pipelines inside Docker containers.
 - Can be deployed in Kubernetes.
-- Future support for autoscaling in Kubernetes.
+- Support for autoscaling in Kubernetes.
 - Lightweight and easy to set up with Docker Compose.
 
 ## Installation
