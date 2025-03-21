@@ -1,0 +1,45 @@
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-trigger-auth-rabbitmq-conn
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: keda-rabbitmq-secret
+      key: host
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: runner-scaledjob
+spec:
+  jobTargetRef:
+    parallelism: 10
+    completions: 1
+    template:
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/spyrosmoux/cicd/runner:latest
+            envFrom:
+              - configMapRef:
+                  name: env-vars
+                  optional: false
+              - secretRef:
+                  name: secret-vars
+                  optional: false
+        restartPolicy: OnFailure
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 2
+  triggers:
+    - type: rabbitmq
+      metadata:
+        protocol: auto
+        queueName: jobs
+        mode: QueueLength
+        value: "2"
+        unsafeSsl: 'true'
+      authenticationRef:
+        name: keda-trigger-auth-rabbitmq-conn

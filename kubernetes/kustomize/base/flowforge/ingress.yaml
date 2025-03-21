@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flowforge-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: flowforge-k8s.spyrosmoux.com
+      http:
+        paths:
+          - path: /app/cicd/api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http

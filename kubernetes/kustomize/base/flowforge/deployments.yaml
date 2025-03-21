@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      name: api
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/spyrosmoux/cicd/api:v0.1.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              port: http
+              path: /app/cicd/api/health
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /app/cicd/api/health
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: env-vars
+                optional: false
+            - secretRef:
+                name: secret-vars
+                optional: false
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      name: rabbitmq
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management
+          imagePullPolicy: Always
+          ports:
+            - name: rabbit
+              containerPort: 5672
+              protocol: TCP
+            - name: rabbit-secure
+              containerPort: 15672
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: env-vars
+                optional: false
+            - secretRef:
+                name: secret-vars
+                optional: false
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-db
+  labels:
+    app: api-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-db
+  template:
+    metadata:
+      name: api-db
+      labels:
+        app: api-db
+    spec:
+      containers:
+        - name: api-db
+          image: postgres:17
+          imagePullPolicy: Always
+          ports:
+            - name: db-port
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: env-vars
+                optional: false
+            - secretRef:
+                name: secret-vars
+                optional: false
+      restartPolicy: Always
