@@ -1,0 +1,73 @@
+---
+title: 'Kubernetes Setup'
+---
+
+This guide will help you get FlowForge up and running on your server. We'll walk you through installing FlowForge using Kubernetes.
+
+We assume you have already set up your webhooks. Check the guide [here](/essentials/setup-webhook)
+
+## Prerequisites
+
+Before proceeding with the installation of the CI/CD app, you need to install KEDA (Kubernetes Event-driven Autoscaling). KEDA allows you to scale your workloads based on events.
+
+### Step 1: Install KEDA
+
+To install KEDA, run the following command:
+
+```bash
+kustomize build kustomize/kubernetes/overlays/keda --enable-helm > k8s-manifest.yaml
+kubectl create namespace keda
+kubectl apply --server-side -f k8s-manifest.yaml
+```
+
+### Step 2: Create secret for RabbitMQ
+
+The CI/CD app relies on RabbitMQ, and you will need to create a Kubernetes secret for RabbitMQ credentials.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keda-rabbitmq-secret
+data:
+  host: <base64 secret> # base64 encoded value of format http://guest:password@localhost:15672/path/vhost
+```
+
+To base64 encode the RabbitMQ URL, you can use the following command:
+
+```bash
+echo -n "http://guest:password@localhost:15672/path/vhost" | base64
+```
+
+### Step 3: Update the ingress hosts
+
+Find the Ingress configuration in kubernetes/kustomize/base/flowforge/ingress.yaml file, and update the host field to match your desired domain name.
+
+### Step 4: Create the .env.k8s file
+
+The .env.k8s file should contain the following parameters
+
+```.dotenv
+DB_HOST=api-db.flowforge.svc.cluster.local
+DB_PORT=5432
+DB_USER=api_user
+POSTGRES_USER=api_user
+DB_PASS=somePassword
+POSTGRES_PASSWORD=somePassword
+DB_NAME=api
+POSTGRES_DB=api
+GH_WEBHOOK_SECRET=mySecret
+GH_TOKEN=myToken
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_USER=guest
+RABBITMQ_PASSWORD=guest
+RABBITMQ_PORT=5672
+```
+
+## Install the App
+
+Apply the Kubernetes manifests for the CI/CD app.
+
+```bash
+kubectl apply -k kubernetes/kustomize/overlays/flowforge
+```

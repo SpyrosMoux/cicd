@@ -31,7 +31,8 @@
             "group": "Get Started",
             "pages": [
                 "introduction",
-                "setup"
+                "setup",
+                "kubernetes-setup"
             ]
         },
         {
