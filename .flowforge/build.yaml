@@ -11,4 +11,5 @@ jobs:
         run: |
           cd $(SourcesDirectory)/cicd
           pwd
+          docker login ghcr.io -u spyrosmoux -p ${GH_TOKEN}
           make build-all-docker
