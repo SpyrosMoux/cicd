@@ -21,6 +21,7 @@ import (
 var (
 	apiBaseUrl string
 	logs       *logrus.Logger
+	runOnce    string
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 		os.Exit(1)
 	}
 	pipelines.SetPredefinedVars()
+	runOnce = helpers.LoadEnvVariable("RUN_ONCE")
 }
 
 func main() {
@@ -45,6 +47,9 @@ func main() {
 	go func() {
 		for d := range msgs {
 			runner(client, svc, d)
+			if runOnce == "true" {
+				os.Exit(0)
+			}
 		}
 	}()
 

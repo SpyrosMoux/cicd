@@ -1,0 +1,23 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+
+resources:
+  - deployments.yaml
+  - services.yaml
+  - ingress.yaml
+
+configMapGenerator:
+  - name: env-vars
+    literals:
+      - API_PORT=8080
+      - GIN_MODE=release
+      - API_BASE_URL=http://api.flowforge.svc.cluster.local:8080/app/cicd/api
+      - RUN_ONCE=true
+
+secretGenerator:
+  - name: secret-vars
+    envs:
+      - .env.k8s
+
+generatorOptions:
+  disableNameSuffixHash: true
