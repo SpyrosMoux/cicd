@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
 	"github.com/spyrosmoux/cicd/api/routes"
+	"github.com/spyrosmoux/cicd/common/db"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/logger"
 	"github.com/spyrosmoux/cicd/common/queue"
@@ -32,13 +32,13 @@ func init() {
 
 	// Initialize Db Connection
 	dsn := "host=" + dbHost + " user=" + dbUser + " password=" + dbPass + " dbname=" + dbName + " port=" + dbPort + " sslmode=disable"
-	err := config.Init(dsn, &pipelineruns.PipelineRun{})
+	err := db.Init(dsn, "api", &pipelineruns.PipelineRun{})
 	if err != nil {
 		logs.Fatal(err)
 	}
 
 	// Initialize RabbitMQ
-	queue.InitRabbitMQPublisher()
+	queue.InitRabbitMQPublisher("jobs")
 
 	// Setup routes
 	router = routes.SetupRouter()

@@ -10,6 +10,7 @@ configMapGenerator:
   - name: env-vars
     literals:
       - API_PORT=8080
+      - LOGCOLLECTOR_PORT=8081
       - GIN_MODE=release
       - API_BASE_URL=http://api.flowforge.svc.cluster.local:8080/app/cicd/api
       - RUN_ONCE=true

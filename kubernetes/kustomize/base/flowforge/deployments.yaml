@@ -120,3 +120,55 @@ spec:
                 name: secret-vars
                 optional: false
       restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logcollector
+  labels:
+    app: logcollector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logcollector
+  template:
+    metadata:
+      name: logcollector
+      labels:
+        app: logcollector
+    spec:
+      containers:
+        - name: logcollector
+          image: ghcr.io/spyrosmoux/cicd/logcollector:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              port: http
+              path: /app/cicd/logs/health
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /app/cicd/logs/health
+            successThreshold: 1
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: env-vars
+                optional: false
+            - secretRef:
+                name: secret-vars
+                optional: false
+      restartPolicy: Always
