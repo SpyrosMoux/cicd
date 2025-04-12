@@ -134,6 +134,12 @@ services:
       - cicd_net
 
   logcollector:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.logs.rule=Host(`flowforge.spyrosmoux.com`) && PathPrefix(`/app/cicd/logs`)"
+      - "traefik.http.routers.logs.entrypoints=https"
+      - "traefik.http.routers.logs.tls=true"
+      - "traefik.http.routers.logs.tls.certresolver=letsencrypt"
     container_name: logcollector
     image: ghcr.io/spyrosmoux/cicd/logcollector
     build:
