@@ -24,6 +24,7 @@ func SetupRouter() *gin.Engine {
 	{
 		apiGroup.GET("/health", logHandler.HandleHealth)
 		apiGroup.GET("/:runId", logHandler.HandleGetLogsByRunId)
+		apiGroup.GET("/ws/:runId", logHandler.HandleStreamLogsByRunId)
 	}
 
 	return router
