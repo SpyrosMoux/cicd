@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/spyrosmoux/cicd/common/logger"
 	"github.com/spyrosmoux/cicd/common/queue"
 	"github.com/spyrosmoux/cicd/runner/dirmanagement"
+	"github.com/spyrosmoux/cicd/runner/git"
 	"github.com/spyrosmoux/cicd/runner/pipelines"
 	"gopkg.in/yaml.v3"
 )
@@ -37,15 +39,21 @@ func init() {
 }
 
 func main() {
-	msgs := queue.InitRabbitMQConsumer()
+	// set prefetch size to 1, so each runner consumes only 1 run each time
+	msgs := queue.InitRabbitMQConsumer("jobs", 1)
+	queue.InitRabbitMQPublisher("logs")
 
 	var forever chan struct{}
 
 	client := sdk.NewClient(apiBaseUrl)
-	svc := pipelines.NewService(logs)
 
 	go func() {
 		for d := range msgs {
+			ctxLogger := logs.WithContext(context.WithValue(context.Background(), "pipelineRunId", d.CorrelationId))
+
+			gitClient := git.NewGitClient(ctxLogger)
+			svc := pipelines.NewService(ctxLogger, gitClient)
+
 			runner(client, svc, d)
 			if runOnce == "true" {
 				os.Exit(0)
@@ -79,11 +87,12 @@ func runner(client *sdk.Client, svc pipelines.Service, d amqp091.Delivery) {
 	var pipeline pipelines.Pipeline
 	err = yaml.Unmarshal(publishRunDto.PipelineAsBytes, &pipeline)
 	if err != nil {
-		logs.WithError(err).Error("filaed to unmarshal pipeline")
+		logs.WithError(err).Error("failed to unmarshal pipeline")
 	}
 
 	runResult := true
-	runError := svc.RunPipeline(pipeline, publishRunDto.Metadata)
+	ctx := context.WithValue(context.Background(), "pipelineRunId", d.CorrelationId)
+	runError := svc.RunPipeline(ctx, pipeline, publishRunDto.Metadata)
 	if runError != nil {
 		runResult = false
 	}

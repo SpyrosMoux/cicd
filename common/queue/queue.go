@@ -1,6 +1,9 @@
 package queue
 
 import (
+	"encoding/json"
+
+	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/helpers"
 	"github.com/spyrosmoux/cicd/common/logger"
 
@@ -18,11 +21,11 @@ var (
 )
 
 // InitRabbitMQPublisher initializes the connection to RabbitMQ for the Api
-func InitRabbitMQPublisher() {
-	channel = establishConnection()
+func InitRabbitMQPublisher(channel string) {
+	ch := establishConnection()
 
-	_, err := channel.QueueDeclare(
-		"jobs",
+	_, err := ch.QueueDeclare(
+		channel,
 		true,
 		false,
 		false,
@@ -52,12 +55,39 @@ func PublishJob(pipelineRunId string, body []byte) {
 	}
 }
 
+func PublishLog(pipelineRunId string, logEntryDto dto.LogEntryDto) error {
+	body, err := json.Marshal(logEntryDto)
+	if err != nil {
+		logs.WithError(err).Error("failed to marshal LogEntryDto into []byte")
+		return err
+	}
+
+	err = channel.Publish(
+		"",
+		"logs",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:   "application/json",
+			Body:          body,
+			DeliveryMode:  amqp.Persistent,
+			CorrelationId: pipelineRunId,
+		},
+	)
+	if err != nil {
+		logs.WithError(err).Error("failed to publish message")
+		return err
+	}
+
+	return nil
+}
+
 // InitRabbitMQConsumer initializes the connection to RabbitMQ for the Runner
-func InitRabbitMQConsumer() <-chan amqp.Delivery {
+func InitRabbitMQConsumer(channel string, prefetchSize int) <-chan amqp.Delivery {
 	ch := establishConnection()
 
 	q, err := ch.QueueDeclare(
-		"jobs",
+		channel,
 		true,
 		false,
 		false,
@@ -68,8 +98,7 @@ func InitRabbitMQConsumer() <-chan amqp.Delivery {
 		logs.WithError(err).Error("failed to declare a queue")
 	}
 
-	// Set QoS (Quality of Service) to prefetch 1 message at a time
-	err = ch.Qos(1, 0, false)
+	err = ch.Qos(prefetchSize, 0, false)
 	if err != nil {
 		logs.WithError(err).Error("failed to set QoS")
 	}

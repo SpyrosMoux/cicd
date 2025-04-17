@@ -1,0 +1,11 @@
+services:
+  logcollector:
+    container_name: logcollector
+    image: ghcr.io/spyrosmoux/cicd/logcollector
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.logcollector
+    env_file:
+      - ../.env.docker
+    ports:
+      - "8081:8081"

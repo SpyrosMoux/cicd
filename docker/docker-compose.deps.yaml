@@ -5,9 +5,9 @@ services:
     ports:
       - 5433:5432
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-api_user}
+      POSTGRES_USER: ${POSTGRES_USER:-cicd_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-somePassword}
-      POSTGRES_DB: ${POSTGRES_DB:-api}
+      POSTGRES_DB: ${POSTGRES_DB:-cicd}
 
   rabbitmq:
     image: rabbitmq:3.13-management

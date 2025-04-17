@@ -3,22 +3,32 @@ package git
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/spyrosmoux/cicd/common/logger"
-	"log/slog"
 	"os/exec"
 	"path/filepath"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spyrosmoux/cicd/common/dto"
+	"github.com/spyrosmoux/cicd/common/queue"
 )
 
-var logs *logrus.Logger
-
-func init() {
-	logs = logger.NewLogger()
+type GitClient interface {
+	CloneRepo(repoMeta dto.Metadata, dir string) error
+	CheckoutBranch(branchName string) error
 }
 
-func CloneRepo(repoMeta dto.Metadata, dir string) error {
+type gitClient struct {
+	logs *logrus.Entry
+}
+
+func NewGitClient(logs *logrus.Entry) GitClient {
+	return &gitClient{
+		logs: logs,
+	}
+}
+
+func (gitClient gitClient) CloneRepo(repoMeta dto.Metadata, dir string) error {
 	repoUrl := repoMeta.RepoOwner + "/" + repoMeta.Repository + ".git"
 
 	isPrivate, err := isPrivate(repoMeta.RepoVisibility)
@@ -39,37 +49,50 @@ func CloneRepo(repoMeta dto.Metadata, dir string) error {
 
 	cmd := exec.Command("git", "clone", normalizedUrl, targetDir)
 
-	logs.WithFields(logrus.Fields{
-		"cmd": cmd.String(),
-	}).Info("executing")
+	pipelineRunId := gitClient.logs.Context.Value("pipelineRunId").(string)
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("executing cmd=%s", cmd.String()),
+	})
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git clone failed output=%s", string(output))
 	}
 
-	logs.WithFields(logrus.Fields{
-		"output": string(output),
-	}).Info("git clone succeeded")
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   "git clone succeeded",
+	})
 	return nil
 }
 
-func CheckoutBranch(branchName string) error {
+func (gitClient gitClient) CheckoutBranch(branchName string) error {
 	cmd := exec.Command("git", "fetch", "origin")
 
-	logs.WithFields(logrus.Fields{
-		"cmd": cmd.String(),
-	}).Info("executing")
+	pipelineRunId := gitClient.logs.Context.Value("pipelineRunId").(string)
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("executing cmd=%s", cmd.String()),
+	})
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error fetching origin, %s", err.Error())
 	}
 
-	logs.WithFields(logrus.Fields{
-		"cmd":    cmd.String(),
-		"output": string(output),
-	}).Info("executed successfully")
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("executed successfully cmd=%s output=%s", cmd.String(), string(output)),
+	})
 
 	// skip checkout if branch is already checked out
 	skip, err := shouldSkipCheckout(branchName)
@@ -81,27 +104,34 @@ func CheckoutBranch(branchName string) error {
 		return nil
 	}
 
-	slog.Debug("will checkout branch ", "branch", branchName)
-
-	logs.WithFields(logrus.Fields{
-		"branch": branchName,
-	}).Info("will checkout")
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("will checkout branch=%s", branchName),
+	})
 
 	cmd = exec.Command("git", "switch", "-c", branchName, "origin/"+branchName)
 
-	logs.WithFields(logrus.Fields{
-		"cmd": cmd.String(),
-	}).Info("executing")
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("executing cmd=%s", cmd.String()),
+	})
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error checking out remote branch %s, %s", branchName, err.Error())
 	}
 
-	logs.WithFields(logrus.Fields{
-		"cmd":    cmd.String(),
-		"output": string(output),
-	}).Info("executed successfully")
+	queue.PublishLog(pipelineRunId, dto.LogEntryDto{
+		RunId:     pipelineRunId,
+		Timestamp: time.Now().UTC().String(),
+		LogLevel:  "INFO",
+		Message:   fmt.Sprintf("executed successfully cmd=%s output=%s", cmd.String(), string(output)),
+	})
+
 	return nil
 }
 
