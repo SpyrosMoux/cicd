@@ -3,7 +3,7 @@ package pipelineruns
 import (
 	"fmt"
 
-	"github.com/spyrosmoux/cicd/api/config"
+	"github.com/spyrosmoux/cicd/common/db"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +17,7 @@ func NewRepository(db *gorm.DB) Repository {
 
 func (repo *repository) FindById(id string) (*PipelineRun, error) {
 	var run PipelineRun
-	result := config.DB.Where("id = ?", id).First(&run)
+	result := db.DB.Where("id = ?", id).First(&run)
 	if result.Error != nil {
 		return &PipelineRun{}, result.Error
 	}
@@ -26,7 +26,7 @@ func (repo *repository) FindById(id string) (*PipelineRun, error) {
 
 func (repo *repository) FindAll() (*[]PipelineRun, error) {
 	var runs *[]PipelineRun
-	result := config.DB.Find(&runs)
+	result := db.DB.Find(&runs)
 	if result.Error != nil {
 		return &[]PipelineRun{}, fmt.Errorf("unable to fetch pipeline runs from db, err=%s", result.Error)
 	}
@@ -35,7 +35,7 @@ func (repo *repository) FindAll() (*[]PipelineRun, error) {
 }
 
 func (repo *repository) Update(run *PipelineRun) (*PipelineRun, error) {
-	result := config.DB.Save(&run)
+	result := db.DB.Save(&run)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -43,7 +43,7 @@ func (repo *repository) Update(run *PipelineRun) (*PipelineRun, error) {
 }
 
 func (repo *repository) Create(run *PipelineRun) error {
-	result := config.DB.Create(run)
+	result := db.DB.Create(run)
 	if result.Error != nil {
 		return result.Error
 	}

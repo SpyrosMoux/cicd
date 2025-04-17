@@ -1,14 +1,15 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/spyrosmoux/cicd/api/config"
 	"github.com/spyrosmoux/cicd/api/gh"
 	"github.com/spyrosmoux/cicd/api/pipelineruns"
+	"github.com/spyrosmoux/cicd/common/db"
 	"github.com/spyrosmoux/cicd/common/dto"
 	"github.com/spyrosmoux/cicd/common/logger"
-	"net/http"
 )
 
 func SetupRouter() *gin.Engine {
@@ -25,7 +26,7 @@ func SetupRouter() *gin.Engine {
 		AllowCredentials: true,
 	}))
 
-	pipelineRunsRepo := pipelineruns.NewRepository(config.DB)
+	pipelineRunsRepo := pipelineruns.NewRepository(db.DB)
 	pipelineRunsSvc := pipelineruns.NewService(pipelineRunsRepo)
 	pipelineRunsHandler := pipelineruns.NewHandler(pipelineRunsSvc)
 

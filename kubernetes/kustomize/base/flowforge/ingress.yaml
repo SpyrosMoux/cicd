@@ -15,3 +15,10 @@ spec:
                 name: api
                 port:
                   name: http
+          - path: /app/cicd/logs
+            pathType: Prefix
+            backend:
+              service:
+                name: logcollector
+                port:
+                  name: http

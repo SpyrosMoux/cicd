@@ -38,3 +38,15 @@ spec:
       port: 15672
       targetPort: rabbit-secure
       name: rabbit-secure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logcollector
+spec:
+  selector:
+    app: logcollector
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: http
