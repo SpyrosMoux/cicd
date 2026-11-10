@@ -38,12 +38,25 @@ async function readLogs(runId: string, signal: AbortSignal): Promise<LogRecord[]
   });
 }
 
+function severityLabel(record: LogRecord) {
+  return ['INFO', 'WARN', 'ERROR', 'DEBUG'][record.logLevel] ?? `Level ${record.logLevel}`;
+}
+
+function recordText(record: LogRecord) {
+  return `${record.timestamp || 'Timestamp unavailable'} ${severityLabel(record)} ${record.message}`;
+}
+
 export class SavedLogs {
   private readonly notice = element('p', 'log-notice');
   private readonly connection = element('p', 'log-notice');
   private readonly output = element('ol', 'log-output');
   private readonly refresh = element('button', '', 'Refresh saved logs');
   private readonly autoScroll = element('input');
+  private readonly search = element('input');
+  private readonly clearSearch = element('button', '', 'Clear log search');
+  private readonly searchNotice = element('p', 'log-notice');
+  private readonly download = element('button', '', 'Download logs');
+  private snapshotLoadedAt = '';
   private run: Run | null = null;
   private request?: AbortController;
   private records: LogRecord[] = [];
@@ -74,7 +87,32 @@ export class SavedLogs {
     this.output.setAttribute('aria-label', 'Saved log records');
     this.output.tabIndex = 0;
     this.connection.setAttribute('aria-live', 'polite');
-    this.host.append(toolbar, this.connection, this.notice, this.output);
+    const controls = element('div', 'log-controls');
+    const searchLabel = element('label', 'log-search', 'Search logs');
+    this.search.type = 'search';
+    this.search.setAttribute('aria-describedby', 'log-search-help');
+    this.search.setAttribute('aria-controls', 'saved-log-records');
+    this.search.autocomplete = 'off';
+    this.search.spellcheck = false;
+    this.search.addEventListener('input', () => this.renderRecords());
+    searchLabel.append(this.search);
+    this.clearSearch.type = 'button';
+    this.clearSearch.disabled = true;
+    this.clearSearch.addEventListener('click', () => {
+      this.search.value = '';
+      this.renderRecords();
+      this.search.focus();
+    });
+    this.download.type = 'button';
+    this.download.disabled = true;
+    this.download.addEventListener('click', () => this.downloadSnapshot());
+    controls.append(searchLabel, this.clearSearch, this.download);
+    const help = element('p', 'log-notice', 'Search is case-sensitive literal text in timestamps, severity and messages. Downloads include all available records, regardless of search.');
+    help.id = 'log-search-help';
+    this.searchNotice.setAttribute('aria-live', 'polite');
+    this.searchNotice.hidden = true;
+    this.output.id = 'saved-log-records';
+    this.host.append(toolbar, controls, help, this.connection, this.notice, this.searchNotice, this.output);
   }
 
   select(run: Run | null) {
@@ -92,6 +130,12 @@ export class SavedLogs {
     this.request = undefined;
     this.run = run;
     this.records = [];
+    this.snapshotLoadedAt = '';
+    this.download.disabled = true;
+    this.search.value = '';
+    this.clearSearch.disabled = true;
+    this.searchNotice.hidden = true;
+    this.searchNotice.textContent = '';
     this.lines.clear();
     this.reconcilePending = false;
     this.failures = 0;
@@ -122,8 +166,42 @@ export class SavedLogs {
     return this.failed ? Math.min(1000 * 2 ** (this.failures - 1), 30_000) : 5000;
   }
 
+  private downloadSnapshot() {
+    if (!this.run || !this.hasSnapshot) return;
+    const text = [
+      'FlowForge saved logs',
+      `Run: ${this.run.id}`,
+      `Snapshot loaded: ${this.snapshotLoadedAt}`,
+      'Scope: Unfiltered available snapshot; may be incomplete or stale.',
+      this.failed ? 'Status: Retained output; last saved-log refresh failed.' : 'Status: Last saved-log refresh succeeded.',
+      '',
+      ...this.records.map(recordText),
+      '',
+    ].join('\n');
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const link = element('a');
+    const filenameId = this.run.id.replace(/[^\p{L}\p{N}._-]/gu, '_').slice(0, 120);
+    link.download = `flowforge-${filenameId}-logs.txt`;
+    link.href = url;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   private followTail() {
     this.output.scrollTop = this.output.scrollHeight;
+  }
+
+  private showSearchNotice(matching: number) {
+    this.searchNotice.hidden = !this.search.value || this.records.length === 0;
+    if (this.searchNotice.hidden) {
+      this.searchNotice.textContent = '';
+      return;
+    }
+    this.searchNotice.textContent = matching
+      ? `${matching} of ${this.records.length} saved records match this search.`
+      : 'No saved log records match this search. Clear log search to restore all available records.';
   }
 
   private renderRecords() {
@@ -141,6 +219,7 @@ export class SavedLogs {
         this.lines.delete(id);
       }
     }
+    let matching = 0;
     this.records.forEach((record, index) => {
       const signature = JSON.stringify(record);
       let line = this.lines.get(record.id);
@@ -148,16 +227,20 @@ export class SavedLogs {
         const node = element('li', 'log-record');
         node.dataset.logId = record.id;
         const timestamp = element('span', 'log-timestamp', record.timestamp || 'Timestamp unavailable');
-        const severity = ['INFO', 'WARN', 'ERROR', 'DEBUG'][record.logLevel] ?? `Level ${record.logLevel}`;
+        const severity = severityLabel(record);
         node.append(timestamp, ' ', element('span', 'log-level', severity), ' ', element('span', 'log-message', record.message));
         line?.node.remove();
         line = { record: signature, node };
         this.lines.set(record.id, line);
       }
+      line.node.hidden = !recordText(record).includes(this.search.value);
+      if (!line.node.hidden) matching++;
       if (this.output.children[index] !== line.node) {
         this.output.insertBefore(line.node, this.output.children[index] ?? null);
       }
     });
+    this.clearSearch.disabled = this.search.value === '';
+    this.showSearchNotice(matching);
     if (this.autoScroll.checked) {
       this.followTail();
     } else if (anchor?.isConnected) {
@@ -186,6 +269,8 @@ export class SavedLogs {
       if (this.request !== request) return;
       this.records = [...new Map(records.map((record) => [record.id, record])).values()];
       this.hasSnapshot = true;
+      this.snapshotLoadedAt = new Date().toISOString();
+      this.download.disabled = false;
       this.failed = false;
       this.failures = 0;
       this.renderRecords();

@@ -5,7 +5,7 @@ stored runs across repositories, newest-triggered first (equal timestamps use
 ascending run ID). Refresh reads the existing API; the frontend stores no history.
 The dashboard is read-only. Open a run to inspect its lifecycle and recorded
 failure alongside saved logs, including completed-run history, and follows newly
-persisted output. Viewer search/download controls follow in ticket #118.
+persisted output. Search the available output or download its unfiltered snapshot.
 
 ## Investigating a run
 
@@ -66,6 +66,39 @@ result. Successful retry clears that warning. Run details and their API refresh
 continue independently during a log-collector outage. Navigating away aborts the
 old log request, closes its subscription, cancels retries, clears its output, and
 prevents late results from crossing runs.
+
+## Searching and downloading logs
+
+**Search logs** filters the selected run's available snapshot as you type. Search
+is case-sensitive literal text across the displayed timestamp, severity, and
+message, including Unicode and whitespace. Characters such as `.*`, brackets,
+and markup have no special meaning. A matching record shows its entire message;
+distinct records with identical messages remain separate. Search never changes
+the saved records or the snapshot used for downloads.
+
+Match counts and **No saved log records match this search** are separate from a
+run with no saved output. **Clear log search** restores all available records and
+returns keyboard focus to the search field. Background snapshot refreshes retain
+the query and include new matching records. Switching runs clears the query and
+the previous run's output. These controls work with saved snapshots even when
+the live connection is unavailable.
+
+**Download logs** saves a UTF-8 plain-text file containing every record in the
+selected run's available snapshot, including lines hidden by search. The filename
+includes the run identifier with filename-unsafe characters replaced by `_` and
+the identifier portion limited to 120 characters. The file includes the exact run
+identifier, snapshot load time, and readable timestamps, stored severity, and
+message text in the same order as the viewer. Missing timestamps are explicitly
+unavailable; repeated messages and message line breaks are preserved.
+
+Download becomes available after the first successful snapshot, including an
+empty one. It does not make a new server request or guarantee complete server
+history. During an outage, search and download remain usable over retained
+output, the page keeps its stale warning, and the file labels a failed refresh
+as retained output. Every export identifies its limited snapshot scope and warns
+that it may be incomplete or stale. Navigation disables download until the next
+run's snapshot succeeds, so delayed reads cannot export another run's records.
+Search, clearing, and download use ordinary keyboard-accessible form controls.
 
 ## Following live output
 
@@ -257,9 +290,16 @@ Live-log journeys additionally cover real WebSocket frames from broker-published
 records, initial-load/subscription overlap, interrupted connections and catch-up,
 late terminal output, run-switch isolation, and keyboard auto-scroll control with
 stable reading position and text selection.
+Search/download journeys cover literal metacharacters, Unicode and markup,
+no matches and clearing, repeated messages, snapshot updates without live
+following, unfiltered exports during search, run-identifying filenames, readable
+historical metadata, delayed reads across runs, retained outage exports, and
+keyboard operation. The saved-log layout checks include these controls at
+desktop and narrow widths.
 
 `make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, saved-log history, and broker-delivered live-log journeys
-through the actual Vite development server and the same disposable backend.
+plus literal-search and unfiltered-download journeys through the actual Vite
+development server and the same disposable backend.
 
 To run a single journey: `npm --prefix ui run test:browser -- --grep 'newest first'`.
 Set `COMPOSE_BIN` to a standalone Compose executable if `docker compose` is not

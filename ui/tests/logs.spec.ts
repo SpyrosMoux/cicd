@@ -54,6 +54,7 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
   try {
     await page.goto('/runs/waiting-output');
     await expect(logs).toContainText('Loading saved logs…');
+    await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeDisabled();
     await expect(page.getByRole('region', { name: 'Run details', exact: true }).getByText('Running', { exact: true })).toBeVisible();
     release();
     await expect(logs).toContainText('Waiting for output');
@@ -69,6 +70,9 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
   await expect(logs).toContainText('Active run already has output.');
   await page.goto('/runs/empty-history');
   await expect(logs).toContainText('No saved logs for this run.');
+  await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeEnabled();
+  await logs.getByRole('searchbox', { name: 'Search logs' }).fill('no output');
+  await expect(logs).not.toContainText('No saved log records match this search.');
   await expect(logs).not.toContainText('Waiting for output');
   service('stop', 'logcollector');
   try {
@@ -77,6 +81,7 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
     await expect(logs).not.toContainText('No saved logs for this run.');
     await page.reload();
     await expect(logs.getByRole('alert')).toContainText('log collector is unavailable');
+    await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeDisabled();
     await expect(page.getByRole('region', { name: 'Run details', exact: true }).getByText('empty-history', { exact: true })).toBeVisible();
     service('start', 'logcollector');
     await waitForCollector(request);
@@ -198,6 +203,10 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   }
   const output = logs.getByRole('list', { name: 'Saved log records' });
   await logs.getByRole('button', { name: 'Refresh saved logs' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(logs.getByRole('searchbox', { name: 'Search logs' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(output).toBeFocused();
   await page.keyboard.press('End');

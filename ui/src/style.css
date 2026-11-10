@@ -14,7 +14,7 @@ body { margin: 0; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button, a:focus-visible { outline-offset: 5px; }
 :focus-visible { outline: 2px solid #8ce9db; }
-button, select {
+button, select, input[type="search"] {
   font: inherit;
   font-size: .875rem;
   font-weight: 600;
@@ -74,6 +74,9 @@ a.run-id { display: block; width: fit-content; color: #a8d6ff; }
 .failure-detail p { margin-bottom: 0; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .saved-logs { margin-top: 24px; min-width: 0; }
 .log-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px; }
+.log-controls { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 0 20px 16px; }
+.log-search { display: flex; flex-direction: column; flex: 1 1 260px; min-width: 0; gap: 8px; color: var(--muted); font-size: .8rem; }
+.log-search input { width: 100%; min-width: 0; cursor: text; font-weight: 400; }
 .log-autoscroll { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .8rem; }
 .log-notice { margin: 0; padding: 0 20px 20px; color: var(--muted); font-size: .8rem; line-height: 1.6; }
 .log-output { max-height: 60vh; overflow: auto; overflow-anchor: none; margin: 0; padding: 16px 20px; list-style: none; border-top: 1px solid var(--border); background: #10151d; color: #e4eaf3; font: .8rem/1.8 ui-monospace, monospace; }
