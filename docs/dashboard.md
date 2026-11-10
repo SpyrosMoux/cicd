@@ -3,8 +3,33 @@
 The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
 stored runs across repositories, newest-triggered first (equal timestamps use
 ascending run ID). Refresh reads the existing API; the frontend stores no history.
-The dashboard is read-only. Run details and the log viewer follow in subsequent
-tickets under spec #112.
+The dashboard is read-only. Open a run to inspect its lifecycle and recorded
+failure. The log viewer follows in subsequent tickets under spec #112.
+
+## Investigating a run
+
+Select a run identifier in the list to open `/runs/<encoded-run-id>`. This is a
+stable link: it works when pasted into a new tab, refreshed, or revisited using
+browser back/forward. The packaged Nginx server and Vite development server both
+serve the dashboard for direct run links. **Back to runs** returns to the list.
+Available list filters, reading position, and the originating link's keyboard
+focus are retained within that tab's navigation history, including a detail-page
+refresh. A newly opened direct link starts with the default list context.
+
+Details show the identifier, repository, branch, status, trigger type, triggering
+actor, and UTC lifecycle times from the existing run-list API. Zero or missing
+timestamps are unavailable. Duration uses actual execution timestamps: running
+work advances locally every second; a recorded end fixes the duration. Unstarted
+work has no duration. Failed runs show the recorded failure as plain text, or
+explain that no detail was recorded.
+
+The same automatic refresh keeps the selected run current without changing its
+URL or selection. Loading, a successfully resolved unknown identifier, and an
+API failure have separate states. During an outage, usable details remain
+visible with an explicit stale warning; automatic retries and **Try again**
+provide recovery. Navigation uses the current URL when a response arrives, so a
+late response cannot select a previously viewed run. No new API endpoint or
+mutation operation is introduced.
 
 ## Filtering and monitoring
 
@@ -135,6 +160,14 @@ refresh during a slow real request. Browser clock control advances refresh time;
 API responses are never substituted. Keyboard and desktop/narrow-screen checks
 include the filters, and a reading-position journey preserves selected text as
 new work arrives.
+
+Run-detail journeys additionally cover direct links (including encoded IDs),
+refresh/back/forward, retained filters/focus/reading position, navigation before
+initial loading finishes, every lifecycle state, zero/null times, live duration
+and fixed recorded ends, recorded/missing failure detail, unknown IDs, API outage
+recovery with retained stale details, and selection changes during a delayed real
+response. Desktop/narrow-screen and keyboard checks include metadata and failure
+text containing Unicode, markup-like content, and long lines.
 
 `make test-ui-dev` runs the ordering, loading/empty, and outage/recovery journeys
 through the actual Vite development server and the same disposable backend.

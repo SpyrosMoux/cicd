@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import pg from 'pg';
 import amqp from 'amqplib';
+import { test as base } from '@playwright/test';
 
 if (!process.env.PGPORT || !process.env.POSTGRES_PASSWORD || !process.env.TEST_COMPOSE_ARGS || !process.env.UI_URL) {
   throw new Error('Use npm run test:browser to create the isolated fixture stack first.');
@@ -9,6 +10,17 @@ if (!process.env.PGPORT || !process.env.POSTGRES_PASSWORD || !process.env.TEST_C
 export const database = new pg.Pool({
   host: '127.0.0.1', port: Number(process.env.PGPORT),
   user: 'cicd', password: process.env.POSTGRES_PASSWORD, database: 'cicd',
+});
+
+// Files share this pool when Playwright reuses a worker; close it only at worker teardown.
+export const test = base.extend<{}, { databaseConnection: void }>({
+  databaseConnection: [async ({}, use) => {
+    try {
+      await use();
+    } finally {
+      await database.end();
+    }
+  }, { scope: 'worker', auto: true }],
 });
 
 export async function resetRuns() {
