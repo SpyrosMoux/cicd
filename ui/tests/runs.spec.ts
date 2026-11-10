@@ -1,8 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { addRun, database, publishLog, resetRuns, service } from './fixtures';
+import { expect } from '@playwright/test';
+import { addRun, publishLog, resetRuns, service, test } from './fixtures';
 
 test.beforeEach(resetRuns);
-test.afterAll(() => database.end());
 
 test('operator sees stored runs newest first with a deterministic tie-breaker', async ({ page }) => {
   await addRun('older', 'Completed', 1794222000, 'cicd');

@@ -5,16 +5,25 @@ export interface Run {
   status: string;
   trigger_type: string;
   triggered_by: string;
+  error?: string | null;
   time_triggered?: number | null;
   time_started?: number | null;
   time_ended?: number | null;
+}
+
+export const statuses = new Set(['Pending', 'Running', 'Completed', 'Failed', 'Canceled']);
+
+export function statusLabel(status: string) {
+  if (statuses.has(status)) return status;
+  return status ? `Unknown (${status})` : 'Unknown';
 }
 
 function isRun(value: unknown): value is Run {
   if (typeof value !== 'object' || value === null) return false;
   const run = value as Record<string, unknown>;
   return ['id', 'repository', 'branch', 'status', 'trigger_type', 'triggered_by']
-    .every((key) => typeof run[key] === 'string') &&
+      .every((key) => typeof run[key] === 'string') &&
+    (run.error == null || typeof run.error === 'string') &&
     ['time_triggered', 'time_started', 'time_ended']
       .every((key) => run[key] == null || (typeof run[key] === 'number' && Number.isFinite(run[key])));
 }
@@ -49,7 +58,8 @@ export function formatTime(value?: number | null): string {
 
 export function formatDuration(run: Run): string {
   const start = run.time_started ?? 0;
-  const end = run.status === 'Running' ? Date.now() / 1000 : run.time_ended ?? 0;
+  let end = run.time_ended ?? 0;
+  if (end <= 0 && run.status === 'Running') end = Date.now() / 1000;
   if (formatTime(start) === 'Unavailable' || formatTime(end) === 'Unavailable' || end < start) return 'Unavailable';
   const seconds = Math.floor(end - start);
   const hours = Math.floor(seconds / 3600);

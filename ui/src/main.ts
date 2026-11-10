@@ -1,12 +1,7 @@
-import { readRuns, formatTime, formatDuration, type Run } from './runs';
+import { readRuns, formatTime, formatDuration, statuses, statusLabel, type Run } from './runs';
+import { element } from './dom';
+import { renderDetails, renderLookupState } from './details';
 import './style.css';
-
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') {
-  const node = document.createElement(tag);
-  node.className = className;
-  node.textContent = text;
-  return node;
-}
 
 const app = document.querySelector<HTMLElement>('#app')!;
 app.innerHTML = `
@@ -14,22 +9,28 @@ app.innerHTML = `
     <a class="brand" href="/" aria-label="FlowForge home"><span class="brand-mark" aria-hidden="true">F</span>FlowForge</a>
     <span class="mode">Read-only dashboard</span>
   </header>
-  <section class="workspace" aria-labelledby="page-title">
+  <div class="workspace">
     <div class="intro">
-      <div><p class="eyebrow">PIPELINE ACTIVITY</p><h1 id="page-title">Recent runs</h1>
+      <div><p class="eyebrow">PIPELINE ACTIVITY</p><h1 id="page-title" tabindex="-1">Recent runs</h1>
         <p class="description">Build history across your repositories. Updates automatically.</p></div>
       <button id="refresh" type="button">Refresh runs <span aria-hidden="true">↻</span></button>
     </div>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <div id="run-list">
     <div class="filters" role="group" aria-label="Run filters">
       <label for="repository-filter">Repository<select id="repository-filter"><option value="">All repositories</option></select></label>
       <label for="status-filter">Status<select id="status-filter"><option value="">All statuses</option></select></label>
       <button id="clear-filters" type="button" disabled>Clear filters</button>
     </div>
     <div class="list-heading"><h2>Run history</h2><span id="run-count"></span></div>
-    <div id="notice" role="status" aria-live="polite"></div>
     <div id="content" class="panel"></div>
+    </div>
+    <section id="run-detail" aria-labelledby="page-title" hidden>
+      <a class="back-link" href="/"><span aria-hidden="true">←</span> Back to runs</a>
+      <div id="detail-content" class="panel"></div>
+    </section>
     <footer>FlowForge <span aria-hidden="true">/</span> Your pipelines, in view.</footer>
-  </section>`;
+  </div>`;
 
 const content = document.querySelector<HTMLElement>('#content')!;
 const notice = document.querySelector<HTMLElement>('#notice')!;
@@ -38,12 +39,95 @@ const refresh = document.querySelector<HTMLButtonElement>('#refresh')!;
 const repositoryFilter = document.querySelector<HTMLSelectElement>('#repository-filter')!;
 const statusFilter = document.querySelector<HTMLSelectElement>('#status-filter')!;
 const clearFilters = document.querySelector<HTMLButtonElement>('#clear-filters')!;
-const statuses = new Set(['Pending', 'Running', 'Completed', 'Failed', 'Canceled']);
+const list = document.querySelector<HTMLElement>('#run-list')!;
+const detail = document.querySelector<HTMLElement>('#run-detail')!;
+const detailContent = document.querySelector<HTMLElement>('#detail-content')!;
+const title = document.querySelector<HTMLElement>('#page-title')!;
 const durations = new Map<HTMLElement, Run>();
 const renderedRows = new Map<string, { signature: string; node: HTMLTableRowElement }>();
 let hasSnapshot = false;
+let readFailed = false;
 let snapshot: Run[] = [];
 let refreshTimer: number | undefined;
+let detailSignature = '';
+let restoreListAfterLoad = false;
+
+interface ListContext {
+  repository: string;
+  status: string;
+  scroll: number;
+  openedId?: string;
+}
+
+function restoreFilters() {
+  const context = history.state as ListContext | null;
+  for (const [select, value] of [[repositoryFilter, context?.repository], [statusFilter, context?.status]] as const) {
+    if (typeof value !== 'string') continue;
+    if (value && !Array.from(select.options).some((option) => option.value === value)) {
+      select.add(new Option(value, value));
+    }
+    select.value = value;
+  }
+}
+
+function selectedId(): string | null {
+  const match = /^\/runs\/([^/]+)\/?$/.exec(location.pathname);
+  if (!match) return null;
+  try { return decodeURIComponent(match[1]); } catch { return match[1]; }
+}
+
+function rememberList(openedId?: string) {
+  const context: ListContext = {
+    repository: repositoryFilter.value, status: statusFilter.value,
+    scroll: window.scrollY, openedId,
+  };
+  history.replaceState(context, '');
+}
+
+function renderSelectedRun() {
+  const id = selectedId();
+  list.hidden = id !== null;
+  detail.hidden = id === null;
+  title.textContent = id === null ? 'Recent runs' : 'Run details';
+  document.querySelector<HTMLElement>('.description')!.textContent = id === null
+    ? 'Build history across your repositories. Updates automatically.'
+    : 'Identity, lifecycle and recorded failure. Updates automatically.';
+  document.title = id === null ? 'FlowForge · Recent runs' : `FlowForge · Run ${id}`;
+  if (id === null) return;
+  const run = snapshot.find((value) => value.id === id);
+  const signature = JSON.stringify([id, run, !run && hasSnapshot, !run && readFailed]);
+  if (signature === detailSignature) return;
+  detailSignature = signature;
+  let state: 'loading' | 'unknown' | 'unavailable' = 'loading';
+  if (readFailed) state = 'unavailable';
+  else if (hasSnapshot) state = 'unknown';
+  detailContent.replaceChildren(run ? renderDetails(run) : renderLookupState(state));
+}
+
+function restoreListPosition() {
+  if (!hasSnapshot) {
+    restoreListAfterLoad = true;
+    return;
+  }
+  restoreListAfterLoad = false;
+  const context = history.state as ListContext | null;
+  const link = Array.from(list.querySelectorAll<HTMLAnchorElement>('a[data-run-id]'))
+    .find((node) => node.dataset.runId === context?.openedId);
+  link?.focus({ preventScroll: true });
+  window.scrollTo(0, typeof context?.scroll === 'number' ? context.scroll : 0);
+}
+
+function navigate(path: string, openedId?: string) {
+  if (selectedId() === null) rememberList(openedId);
+  history.pushState(history.state, '', path);
+  renderSelectedRun();
+  if (selectedId() === null) {
+    restoreListPosition();
+  } else {
+    window.scrollTo(0, 0);
+    title.focus({ preventScroll: true });
+  }
+}
 
 function updateOptions(select: HTMLSelectElement, values: string[], label: (value: string) => string) {
   const selected = select.value;
@@ -55,11 +139,6 @@ function updateOptions(select: HTMLSelectElement, values: string[], label: (valu
     select.replaceChildren(select.options[0], ...values.map((value) => new Option(label(value), value)));
     select.value = selected;
   }
-}
-
-function statusLabel(status: string) {
-  if (statuses.has(status)) return status;
-  return status ? `Unknown (${status})` : 'Unknown';
 }
 
 function renderSnapshot() {
@@ -81,7 +160,11 @@ function renderRun(run: Run) {
   const identity = element('td', 'identity');
   identity.append(element('strong', 'repository', run.repository || 'Unavailable'));
   identity.append(element('span', 'branch', run.branch || 'Unavailable'));
-  identity.append(element('code', 'run-id', run.id));
+  const link = element('a', 'run-id', run.id);
+  link.href = `/runs/${encodeURIComponent(run.id)}`;
+  link.dataset.runId = run.id;
+  link.setAttribute('aria-label', `Open run ${run.id}`);
+  identity.append(link);
   const status = element('td');
   const statusClass = statuses.has(run.status) ? run.status.toLowerCase() : 'unknown';
   status.append(element('span', `status ${statusClass}`, statusLabel(run.status)));
@@ -176,23 +259,30 @@ async function refreshRuns() {
   window.clearTimeout(refreshTimer);
   refresh.disabled = true;
   if (!hasSnapshot) {
+    readFailed = false;
     notice.setAttribute('role', 'status');
-    notice.textContent = 'Loading runs…';
+    notice.textContent = selectedId() === null ? 'Loading runs…' : 'Loading run details…';
   }
+  renderSelectedRun();
   content.setAttribute('aria-busy', 'true');
+  detailContent.setAttribute('aria-busy', 'true');
   try {
     const runs = await readRuns();
     snapshot = runs;
     hasSnapshot = true;
+    readFailed = false;
     updateOptions(repositoryFilter, [...new Set(runs.map((run) => run.repository).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b)), (value) => value);
     const extraStatuses = [...new Set(runs.map((run) => run.status)
       .filter((value) => value && !statuses.has(value)))].sort((a, b) => a.localeCompare(b));
     updateOptions(statusFilter, [...statuses, ...extraStatuses], statusLabel);
     renderSnapshot();
+    renderSelectedRun();
+    if (restoreListAfterLoad && selectedId() === null) restoreListPosition();
     notice.setAttribute('role', 'status');
     notice.textContent = `Last refreshed: ${formatTime(Date.now() / 1000)}`;
   } catch {
+    readFailed = true;
     notice.setAttribute('role', 'alert');
     notice.textContent = hasSnapshot
       ? 'Unable to refresh runs. Showing previously loaded history; it may be stale.'
@@ -200,33 +290,62 @@ async function refreshRuns() {
     const retry = element('button', '', 'Try again');
     retry.type = 'button';
     retry.addEventListener('click', refreshRuns);
-    if (hasSnapshot) {
-      notice.append(' ', retry);
-    } else {
+    notice.append(' ', retry);
+    if (!hasSnapshot) {
       const state = element('div', 'state');
       state.append(element('h2', '', 'Unable to load runs'),
-        element('p', '', 'Check that the API is running and reachable, then try again.'), retry);
+        element('p', '', 'Check that the API is running and reachable, then try again.'));
       content.replaceChildren(state);
       count.textContent = 'Unavailable';
     }
+    renderSelectedRun();
   } finally {
     refresh.disabled = false;
     content.setAttribute('aria-busy', 'false');
+    detailContent.setAttribute('aria-busy', 'false');
     // Schedule after completion so slow requests and manual refreshes never overlap.
     refreshTimer = window.setTimeout(refreshRuns, 5000);
   }
 }
 
-repositoryFilter.addEventListener('change', () => { if (hasSnapshot) renderSnapshot(); });
-statusFilter.addEventListener('change', () => { if (hasSnapshot) renderSnapshot(); });
+for (const select of [repositoryFilter, statusFilter]) {
+  select.addEventListener('change', () => {
+    rememberList();
+    if (hasSnapshot) renderSnapshot();
+  });
+}
 clearFilters.addEventListener('click', () => {
   repositoryFilter.value = '';
   statusFilter.value = '';
+  rememberList();
   renderSnapshot();
   repositoryFilter.focus();
 });
 refresh.addEventListener('click', refreshRuns);
+app.addEventListener('click', (event) => {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a') : null;
+  if (!link || !(link.matches('[data-run-id], .back-link, .brand'))) return;
+  event.preventDefault();
+  navigate(link.pathname, link.dataset.runId);
+});
+window.addEventListener('popstate', () => {
+  restoreFilters();
+  if (hasSnapshot) renderSnapshot();
+  renderSelectedRun();
+  if (selectedId() === null) restoreListPosition();
+  else title.focus({ preventScroll: true });
+});
 window.setInterval(() => {
   for (const [node, run] of durations) node.textContent = `Duration: ${formatDuration(run)}`;
+  const duration = detailContent.querySelector<HTMLElement>('[data-duration]');
+  const run = snapshot.find((value) => value.id === selectedId());
+  if (duration && run) {
+    const value = formatDuration(run);
+    if (duration.textContent !== value) duration.textContent = value;
+  }
 }, 1000);
+restoreFilters();
+renderSelectedRun();
+if (selectedId() === null) restoreListPosition();
 await refreshRuns();
