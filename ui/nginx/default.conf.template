@@ -1,4 +1,4 @@
-# Match the original escaped URI so run IDs containing slashes remain one parameter.
+# Preserve the original escaped run ID when routing saved-log reads.
 map $request_uri $saved_log_path {
     default "";
     ~^/api/logs/([^/?]+)$ /app/cicd/logs/$1;

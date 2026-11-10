@@ -15,7 +15,7 @@ async function waitForCollector(request: APIRequestContext) {
   }).toBe(200);
 }
 
-test('saved logs preserve repeated records, metadata and stable public read ordering', async ({ page, request }) => {
+test('saved logs preserve repeated records, metadata and stable presentation of unordered reads', async ({ page, request }) => {
   await addRun('saved-history', 'Completed', 1794225600);
   await publishLog('saved-history', 'Last timestamp', { timestamp: '2026-11-09T12:00:02Z', logLevel: 'ERROR' });
   await publishLog('saved-history', 'Repeated output');
@@ -24,24 +24,33 @@ test('saved logs preserve repeated records, metadata and stable public read orde
   await expect.poll(async () => (await (await request.get(url)).json()).data?.length).toBe(3);
   const read = async () => (await (await request.get(url)).json()).data;
   const records = await read();
-  expect(records.map((record: { message: string }) => record.message))
-    .toEqual(['Repeated output', 'Repeated output', 'Last timestamp']);
-  expect(records[0].id < records[1].id).toBe(true);
-  expect(records[2].logLevel).toBe(2);
+  expect(records.map((record: { message: string }) => record.message).sort())
+    .toEqual(['Last timestamp', 'Repeated output', 'Repeated output']);
+  // Display the numeric severity actually persisted by the unchanged backend.
+  expect(records.find((record: { message: string }) => record.message === 'Last timestamp').logLevel).toBe(0);
   expect(new Set(records.map((record: { id: string }) => record.id)).size).toBe(3);
-  for (let index = 0; index < 3; index++) expect(await read()).toEqual(records);
+  for (let index = 0; index < 3; index++) {
+    expect((await read()).map((record: { id: string }) => record.id).sort())
+      .toEqual(records.map((record: { id: string }) => record.id).sort());
+  }
+  // Known historical IDs make the equal-timestamp presentation order observable as text.
+  await database.query(`INSERT INTO logcollector.log_entries (id, run_id, timestamp, log_level, message)
+    VALUES ($1, $2, $3, $4, $5), ($6, $2, $3, $4, $7)`,
+    ['z-tie', 'saved-history', '2026-11-09T12:00:01Z', 0, 'Tie second', 'a-tie', 'Tie first']);
   await page.goto('/runs/saved-history');
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
-  await expect(logs.getByRole('listitem')).toHaveCount(3);
+  await expect(logs.getByRole('listitem')).toHaveCount(5);
   await expect(logs.getByRole('listitem')).toHaveText([
     '2026-11-09T12:00:00Z INFO Repeated output',
     '2026-11-09T12:00:00Z INFO Repeated output',
-    '2026-11-09T12:00:02Z ERROR Last timestamp',
+    '2026-11-09T12:00:01Z INFO Tie first',
+    '2026-11-09T12:00:01Z INFO Tie second',
+    '2026-11-09T12:00:02Z INFO Last timestamp',
   ]);
   await logs.getByRole('button', { name: 'Refresh saved logs' }).click();
   await expect(logs.getByRole('button', { name: 'Refresh saved logs' })).toBeEnabled();
-  await expect(logs.getByRole('listitem')).toHaveCount(3);
-  await expect(logs.getByRole('status')).toHaveText('3 saved records.');
+  await expect(logs.getByRole('listitem')).toHaveCount(5);
+  await expect(logs.getByRole('status')).toHaveText('5 saved records.');
 });
 
 test('saved logs distinguish loading, active waiting, completed empty and unavailable snapshots', async ({ page, request }) => {
@@ -171,7 +180,7 @@ test('switching runs cancels ownership of a delayed saved-log response', async (
 });
 
 test('saved logs preserve legacy records and safe Unicode content through encoded IDs and keyboard navigation', async ({ page, request }, testInfo) => {
-  const id = 'build/δοκιμή #1?100%';
+  const id = 'build-δοκιμή #1?100%';
   const message = `Καλημέρα 👻 <img src=x onerror=alert(1)> <script>alert(1)</script>\n${'very-long-line-'.repeat(100)}\n${'compiler output\n'.repeat(80)}`;
   await addRun(id, 'Completed', 1794225600);
   // A historical row using exactly the pre-existing schema, without timestamp metadata.
@@ -189,8 +198,8 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   await expect(logs.getByRole('listitem')).toHaveCount(3);
   await expect(logs.getByRole('listitem').first()).toHaveText('Timestamp unavailable INFO Legacy saved output.');
   await expect(logs.getByText(message, { exact: true })).toBeVisible();
-  await expect(logs.getByRole('listitem').nth(1)).toContainText('WARN');
-  await expect(logs.getByRole('listitem').last()).toHaveText('2026-11-09T12:00:01Z DEBUG Debug output.');
+  await expect(logs.getByRole('listitem').nth(1)).toContainText('INFO');
+  await expect(logs.getByRole('listitem').last()).toHaveText('2026-11-09T12:00:01Z INFO Debug output.');
   await expect(page.locator('img, #saved-logs script')).toHaveCount(0);
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });

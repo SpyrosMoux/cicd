@@ -28,8 +28,13 @@ async function readLogs(runId: string, signal: AbortSignal): Promise<LogRecord[]
         envelope.data.every((value: unknown) => isLogRecord(value, runId))))) {
     throw new Error('The log collector returned an unexpected response.');
   }
-  // The collector supplies the canonical order. Keep record identity, including repeated messages.
-  return envelope.data ?? [];
+  // The existing collector does not order reads. Sort the snapshot without inventing emission order.
+  const records: LogRecord[] = envelope.data ?? [];
+  return records.sort((a, b) => {
+    if (a.timestamp !== b.timestamp) return a.timestamp < b.timestamp ? -1 : 1;
+    if (a.id === b.id) return 0;
+    return a.id < b.id ? -1 : 1;
+  });
 }
 
 export class SavedLogs {

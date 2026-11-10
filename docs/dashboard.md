@@ -40,18 +40,22 @@ ERROR or DEBUG), and literal message text. Equal messages in different records
 remain separate lines. The keyboard-focusable pane wraps long lines and contains
 scrolling within the page. Markup-like output and Unicode are displayed as text.
 
-The collector now explicitly orders reads by the stored timestamp string ascending,
-then record ID ascending. This is a deterministic presentation order, including
+The UI sorts each snapshot by the stored timestamp string ascending,
+then record ID ascending. The backend read contract stays unchanged and does not
+guarantee response ordering. This is a deterministic presentation order, including
 for older records; it does **not** reconstruct emission order. Timestamps are
 stored strings, may use different formats, and can repeat. The UUID tie-breaker
 is not a sequence or ingestion cursor. No schema, response envelope, record fields,
 or WebSocket message format changes are required. Empty reads retain the existing
-successful response with an empty array (the browser also accepts null data). Escaped run IDs are supported
-as a single HTTP route parameter.
+successful response with an empty array (the browser also accepts null data).
+The UI proxy preserves escaped IDs, subject to the existing collector's route
+constraints. IDs containing slashes cannot be read by that backend; a failed log
+read leaves the run details usable.
 
-Newly ingested severities use INFO=0, WARN=1, ERROR=2, DEBUG=3. The collector's
-previous constant declaration stored every severity as zero; those historical
-records remain readable as INFO because their original severity was not saved.
+The UI renders the numeric severity actually stored on each record, using
+INFO=0, WARN=1, ERROR=2, DEBUG=3. The existing collector's constant declaration
+stores every incoming severity as zero, so those records display INFO. The UI
+does not reconstruct missing severity information or change backend ingestion.
 
 Loading, no saved output, waiting for output on Pending/Running runs, and retrieval
 failure have distinct messages. **Refresh saved logs** reloads the snapshot and
@@ -208,7 +212,7 @@ response. Desktop/narrow-screen and keyboard checks include metadata and failure
 text containing Unicode, markup-like content, and long lines.
 
 Saved-log journeys additionally cover collector-persisted RabbitMQ events, repeated
-message identity, explicit public HTTP ordering and severity, historical rows,
+message identity, deterministic UI ordering and stored severity, historical rows,
 active and completed empty states, loading, stale/initial failures and retry,
 collector and UI restarts, delayed responses across selections, escaped run IDs,
 literal Unicode/markup output, long lines, keyboard scrolling, and narrow layouts.

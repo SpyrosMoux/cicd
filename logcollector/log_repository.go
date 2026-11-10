@@ -27,9 +27,7 @@ func (logRepository logRepository) Save(logEntry LogEntry) error {
 
 func (logRepository logRepository) FindAllByRunId(runId string) ([]LogEntry, error) {
 	var logEntries []LogEntry
-	// Stored timestamps can repeat; UUIDs provide a stable tie-breaker, not emission order.
-	result := logRepository.DbConn.Where("run_id = ?", runId).
-		Order("timestamp ASC").Order("id ASC").Find(&logEntries)
+	result := logRepository.DbConn.Where("run_id = ?", runId).Find(&logEntries, nil)
 	if result.Error != nil {
 		return []LogEntry{}, result.Error
 	}
