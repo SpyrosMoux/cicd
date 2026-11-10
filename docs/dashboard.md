@@ -3,8 +3,33 @@
 The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
 stored runs across repositories, newest-triggered first (equal timestamps use
 ascending run ID). Refresh reads the existing API; the frontend stores no history.
-This first slice is read-only. Filters, run details, and the log viewer follow in
-subsequent tickets under spec #112.
+The dashboard is read-only. Run details and the log viewer follow in subsequent
+tickets under spec #112.
+
+## Filtering and monitoring
+
+Use the **Repository** and **Status** selectors independently or together.
+Repositories come from the complete loaded history. The status selector always
+offers Pending, Running, Completed, Failed, and Canceled; unexpected recorded
+statuses appear as Unknown with their original value. **Clear filters** restores
+the full list. Counts show matches against the loaded total when filters are
+active. An empty installation says **No runs yet**; filters with no matches say
+**No matching runs**.
+
+The page automatically reads fresh run history five seconds after each request
+finishes, including after failures. Requests have a ten-second timeout and never
+overlap; **Refresh runs** also restarts that schedule. New runs appear newest
+first, and changed statuses immediately enter or leave the filtered list.
+Background updates preserve filters, keyboard focus, unchanged rows and selected
+text, and the reading position when unchanged visible rows remain. Newly seen
+repositories become selectable. An active selection stays available even if its
+last run disappears from the latest snapshot.
+
+If the API becomes unavailable, previously loaded history remains usable with a
+warning that it may be stale. Filters still work against that retained snapshot.
+The page retries automatically and clears the warning after a successful read;
+**Try again** also allows immediate recovery. A failure before any successful
+load shows **Unable to load runs**, never a successful empty result.
 
 ## Local deployment
 
@@ -104,6 +129,12 @@ records in that database, exercises real HTTP reads through Nginx, and removes
 only its own stack and volumes afterward. No live GitHub event, runner execution,
 mocked API response, or production test endpoint is used. Its shared fixture
 publisher sends logs through RabbitMQ to the real collector for later slices.
+Journeys cover combined filters, no matches/reset, new repositories and runs,
+status changes through the existing API, automatic outage recovery, and bounded
+refresh during a slow real request. Browser clock control advances refresh time;
+API responses are never substituted. Keyboard and desktop/narrow-screen checks
+include the filters, and a reading-position journey preserves selected text as
+new work arrives.
 
 `make test-ui-dev` runs the ordering, loading/empty, and outage/recovery journeys
 through the actual Vite development server and the same disposable backend.
