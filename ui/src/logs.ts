@@ -203,7 +203,8 @@ export class SavedLogs {
         this.request = undefined;
         this.output.setAttribute('aria-busy', 'false');
         // Signals during a read require another snapshot, even when that read succeeds.
-        const delay = this.reconcilePending ? 100 : this.retryDelay();
+        let delay = this.retryDelay();
+        if (this.reconcilePending && !this.failed) delay = 100;
         this.reconcilePending = false;
         this.timer = window.setTimeout(() => { void this.load(); }, delay);
       }

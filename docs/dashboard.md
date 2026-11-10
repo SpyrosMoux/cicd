@@ -258,7 +258,7 @@ records, initial-load/subscription overlap, interrupted connections and catch-up
 late terminal output, run-switch isolation, and keyboard auto-scroll control with
 stable reading position and text selection.
 
-`make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, and saved-log history journeys
+`make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, saved-log history, and broker-delivered live-log journeys
 through the actual Vite development server and the same disposable backend.
 
 To run a single journey: `npm --prefix ui run test:browser -- --grep 'newest first'`.

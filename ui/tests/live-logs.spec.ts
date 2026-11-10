@@ -1,14 +1,7 @@
-import { expect, type APIRequestContext, type WebSocketRoute } from '@playwright/test';
-import { addRun, publishLog, resetRuns, service, test } from './fixtures';
+import { expect, type WebSocketRoute } from '@playwright/test';
+import { addRun, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
 
 test.beforeEach(resetRuns);
-
-async function waitForSavedRecords(request: APIRequestContext, runId: string, count: number) {
-  await expect.poll(async () => {
-    const response = await request.get(`${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/${encodeURIComponent(runId)}`);
-    return (await response.json()).data?.length ?? 0;
-  }).toBe(count);
-}
 
 test('live logs follow broker-published records and retain identical messages once per persisted ID', async ({ page, request }) => {
   await addRun('live-output', 'Running', 1794225600);
@@ -272,10 +265,7 @@ test('collector outage retries automatically while readable details and log cont
     await expect(toggle).toBeFocused();
     await publishLog('collector-recovery', 'Queued while collector was down.', { timestamp: '2026-11-09T12:00:01Z' });
     service('start', 'logcollector');
-    await expect.poll(async () => {
-      try { return (await request.get(`${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/health`)).status(); }
-      catch { return 0; }
-    }).toBe(200);
+    await waitForCollector(request);
     await waitForSavedRecords(request, 'collector-recovery', 2);
     // Allow real handshake I/O between timer steps instead of expiring it in one clock jump.
     await expect.poll(async () => {
@@ -306,7 +296,7 @@ test('run API failure is independent of continuing live logs and preserves viewe
   service('stop', 'api');
   try {
     await page.clock.runFor(5000);
-    await expect(page.locator('#notice').getByRole('alert')).toContainText('stale');
+    await expect(page.locator('#notice[role="alert"]')).toContainText('stale');
     await publishLog('independent-output', 'Output continues during the API outage.', { timestamp: '2026-11-09T12:00:01Z' });
     await expect(logs.getByRole('listitem')).toHaveCount(2);
     await expect(logs.getByRole('alert')).toHaveCount(0);
@@ -316,7 +306,7 @@ test('run API failure is independent of continuing live logs and preserves viewe
     service('start', 'api');
     await expect.poll(async () => (await request.get('/api/runs')).status()).toBe(200);
     await page.clock.runFor(5000);
-    await expect(page.locator('#notice').getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('#notice[role="alert"]')).toHaveCount(0);
     await expect(logs.getByRole('listitem')).toHaveCount(2);
     await expect(toggle).not.toBeChecked();
     await expect(toggle).toBeFocused();

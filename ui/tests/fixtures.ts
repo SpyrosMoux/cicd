@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import pg from 'pg';
 import amqp from 'amqplib';
-import { test as base } from '@playwright/test';
+import { expect, test as base, type APIRequestContext } from '@playwright/test';
 
 if (!process.env.PGPORT || !process.env.POSTGRES_PASSWORD || !process.env.TEST_COMPOSE_ARGS || !process.env.UI_URL) {
   throw new Error('Use npm run test:browser to create the isolated fixture stack first.');
@@ -26,6 +26,18 @@ export const test = base.extend<{}, { databaseConnection: void }>({
 export async function resetRuns() {
   await database.query('TRUNCATE api.pipeline_runs');
   await database.query('TRUNCATE logcollector.log_entries');
+}
+
+export async function waitForSavedRecords(request: APIRequestContext, runId: string, count: number) {
+  const url = `${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/${encodeURIComponent(runId)}`;
+  await expect.poll(async () => (await (await request.get(url)).json()).data?.length ?? 0).toBe(count);
+}
+
+export async function waitForCollector(request: APIRequestContext) {
+  await expect.poll(async () => {
+    try { return (await request.get(`${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/health`)).status(); }
+    catch { return 0; }
+  }).toBe(200);
 }
 
 export async function addRun(id: string, status: string, time: number, repository = 'recipe-book', overrides = {}) {
