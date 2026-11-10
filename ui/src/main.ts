@@ -68,8 +68,11 @@ function renderSnapshot() {
     (!repositoryFilter.value || run.repository === repositoryFilter.value) &&
     (!statusFilter.value || run.status === statusFilter.value));
   clearFilters.disabled = !filtered;
-  count.textContent = filtered ? `${runs.length} of ${snapshot.length} runs`
-    : `${runs.length} ${runs.length === 1 ? 'run' : 'runs'}`;
+  if (filtered) {
+    count.textContent = `${runs.length} of ${snapshot.length} runs`;
+  } else {
+    count.textContent = `${runs.length} ${runs.length === 1 ? 'run' : 'runs'}`;
+  }
   renderRuns(runs);
 }
 
@@ -100,6 +103,23 @@ function renderRun(run: Run) {
   return row;
 }
 
+function createRunTable() {
+  const table = element('table');
+  table.append(element('caption', 'sr-only', 'Recent pipeline runs, newest triggered first'));
+  const head = element('thead');
+  const headings = element('tr');
+  for (const label of ['Repository / run', 'Status', 'Trigger', 'Timing']) {
+    const cell = element('th', '', label);
+    cell.scope = 'col';
+    headings.append(cell);
+  }
+  head.append(headings);
+  const body = element('tbody');
+  table.append(head, body);
+  content.replaceChildren(table);
+  return body;
+}
+
 function renderRuns(runs: Run[]) {
   if (runs.length === 0) {
     durations.clear();
@@ -114,26 +134,11 @@ function renderRuns(runs: Run[]) {
     content.replaceChildren(state);
     return;
   }
-  let body = content.querySelector('tbody');
-  if (!body) {
-    const table = element('table');
-    table.append(element('caption', 'sr-only', 'Recent pipeline runs, newest triggered first'));
-    const head = element('thead');
-    const headings = element('tr');
-    for (const label of ['Repository / run', 'Status', 'Trigger', 'Timing']) {
-      const cell = element('th', '', label);
-      cell.scope = 'col';
-      headings.append(cell);
-    }
-    head.append(headings);
-    body = element('tbody');
-    table.append(head, body);
-    content.replaceChildren(table);
-  }
+  const body = content.querySelector('tbody') ?? createRunTable();
   const nextRows = runs.map((run) => {
     const signature = JSON.stringify(run);
     let row = renderedRows.get(run.id);
-    if (!row || row.signature !== signature) {
+    if (row?.signature !== signature) {
       row = { signature, node: renderRun(run) };
       renderedRows.set(run.id, row);
     }
@@ -175,9 +180,10 @@ async function refreshRuns() {
     const runs = await readRuns();
     snapshot = runs;
     hasSnapshot = true;
-    updateOptions(repositoryFilter, [...new Set(runs.map((run) => run.repository).filter(Boolean))].sort(), (value) => value);
+    updateOptions(repositoryFilter, [...new Set(runs.map((run) => run.repository).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b)), (value) => value);
     const extraStatuses = [...new Set(runs.map((run) => run.status)
-      .filter((value) => value && !statuses.has(value)))].sort();
+      .filter((value) => value && !statuses.has(value)))].sort((a, b) => a.localeCompare(b));
     updateOptions(statusFilter, [...statuses, ...extraStatuses], statusLabel);
     renderSnapshot();
     notice.setAttribute('role', 'status');
