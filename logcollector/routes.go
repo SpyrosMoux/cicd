@@ -8,6 +8,8 @@ import (
 
 func SetupRouter() *gin.Engine {
 	router := gin.New()
+	// Keep escaped run identifiers (including slashes) within the single route parameter.
+	router.UseRawPath = true
 	router.Use(gin.Recovery())
 
 	router.Use(cors.New(cors.Config{

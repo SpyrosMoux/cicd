@@ -68,7 +68,10 @@ services:
       RABBITMQ_PORT: '5672'
       RABBITMQ_USER: cicd
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-    ports: !override ['127.0.0.1::8081']
+    ports: !override ['127.0.0.1:${LOGCOLLECTOR_TEST_PORT:?Set LOGCOLLECTOR_TEST_PORT}:8081']
+    networks:
+      default:
+        aliases: [fixture-logs]
     depends_on:
       api: {condition: service_healthy}
     healthcheck:

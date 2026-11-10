@@ -25,6 +25,7 @@ export const test = base.extend<{}, { databaseConnection: void }>({
 
 export async function resetRuns() {
   await database.query('TRUNCATE api.pipeline_runs');
+  await database.query('TRUNCATE logcollector.log_entries');
 }
 
 export async function addRun(id: string, status: string, time: number, repository = 'recipe-book', overrides = {}) {
@@ -41,7 +42,7 @@ export async function addRun(id: string, status: string, time: number, repositor
   );
 }
 
-export function service(action: 'stop' | 'start' | 'restart', name: 'api' | 'ui') {
+export function service(action: 'stop' | 'start' | 'restart', name: 'api' | 'ui' | 'logcollector') {
   const result = spawnSync(process.env.TEST_COMPOSE_BIN!, [
     ...JSON.parse(process.env.TEST_COMPOSE_ARGS!), action, name,
   ], { encoding: 'utf8' });
@@ -49,13 +50,13 @@ export function service(action: 'stop' | 'start' | 'restart', name: 'api' | 'ui'
 }
 
 // Shared fixture publisher for subsequent log journeys: the real collector persists each record.
-export async function publishLog(runId: string, message: string) {
+export async function publishLog(runId: string, message: string, overrides = {}) {
   const connection = await amqp.connect(process.env.RABBITMQ_URL!);
   try {
     const channel = await connection.createConfirmChannel();
     await channel.assertQueue('logs', { durable: true });
     channel.sendToQueue('logs', Buffer.from(JSON.stringify({
-      runId, timestamp: '2026-11-09T12:00:00Z', logLevel: 'INFO', message,
+      runId, timestamp: '2026-11-09T12:00:00Z', logLevel: 'INFO', message, ...overrides,
     })), { persistent: true });
     await channel.waitForConfirms();
     await channel.close();

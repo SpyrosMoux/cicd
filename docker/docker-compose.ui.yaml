@@ -7,6 +7,7 @@ services:
       dockerfile: docker/Dockerfile.ui
     environment:
       API_UPSTREAM: ${API_UPSTREAM:-http://api:8080}
+      LOGCOLLECTOR_UPSTREAM: ${LOGCOLLECTOR_UPSTREAM:-http://logcollector:8081}
     ports:
       - '127.0.0.1:${UI_PORT:-3000}:8080'
     healthcheck:

@@ -1,3 +1,9 @@
+# Match the original escaped URI so run IDs containing slashes remain one parameter.
+map $request_uri $saved_log_path {
+    default "";
+    ~^/api/logs/([^/?]+)$ /app/cicd/logs/$1;
+}
+
 server {
     listen 8080;
     server_name _;
@@ -11,6 +17,15 @@ server {
         limit_except GET { deny all; }
         set $api_upstream "${API_UPSTREAM}";
         proxy_pass $api_upstream/app/cicd/api/runs;
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 8s;
+    }
+
+    location /api/logs/ {
+        limit_except GET { deny all; }
+        if ($saved_log_path = "") { return 404; }
+        set $logcollector_upstream "${LOGCOLLECTOR_UPSTREAM}";
+        proxy_pass $logcollector_upstream$saved_log_path;
         proxy_connect_timeout 3s;
         proxy_read_timeout 8s;
     }

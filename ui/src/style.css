@@ -72,6 +72,14 @@ a.run-id { display: block; width: fit-content; color: #a8d6ff; }
 .detail-fields dd { margin: 0; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
 .failure-detail { padding: 24px 28px; border-top: 1px solid var(--border); }
 .failure-detail p { margin-bottom: 0; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.saved-logs { margin-top: 24px; min-width: 0; }
+.log-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px; }
+.log-notice { margin: 0; padding: 0 20px 20px; color: var(--muted); font-size: .8rem; line-height: 1.6; }
+.log-output { max-height: 60vh; overflow: auto; margin: 0; padding: 16px 20px; list-style: none; border-top: 1px solid var(--border); background: #10151d; color: #e4eaf3; font: .8rem/1.8 ui-monospace, monospace; }
+.log-output:empty { display: none; }
+.log-record { white-space: pre-wrap; overflow-wrap: anywhere; }
+.log-timestamp { color: var(--muted); }
+.log-level { color: #a8d6ff; }
 .status { display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px; border-radius: 5px; font-size: .72rem; font-weight: 600; color: #d5dfed; background: #2c3646; }
 .status::before { content: ''; height: 6px; width: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .status.completed { color: #a3edce; background: #1a3a32; }
