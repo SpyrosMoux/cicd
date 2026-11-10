@@ -7,7 +7,7 @@ BUILD_DIR = build
 DOCKER_REPO = ghcr.io/spyrosmoux/cicd
 SMEE_URL = https://smee.io/vgX1mcHUonHXl1Hh
 PROXY_PORT ?= 8080
-PLATFORM = linux/amd64
+PLATFORM ?= linux/amd64
 TAG ?= latest
 
 # Default targets
@@ -41,7 +41,32 @@ build-logcollector-docker:
 	docker build -t $(DOCKER_REPO)/logcollector:$(TAG) . -f docker/Dockerfile.logcollector --platform $(PLATFORM)
 	docker push $(DOCKER_REPO)/logcollector:$(TAG)
 
-build-all-docker: build-api-docker build-runner-docker build-logcollector-docker
+build-ui-docker:
+	docker build -t $(DOCKER_REPO)/ui:$(TAG) . -f docker/Dockerfile.ui --platform $(PLATFORM)
+	docker push $(DOCKER_REPO)/ui:$(TAG)
+
+build-all-docker: build-api-docker build-runner-docker build-logcollector-docker build-ui-docker
+
+.PHONY: build-ui build-ui-docker dev-ui typecheck-ui test-ui test-ui-dev deploy-dashboard deploy-local-ui
+
+build-ui:
+	npm --prefix ui run build
+
+dev-ui: deploy-local-api
+	npm --prefix ui run dev
+
+typecheck-ui:
+	npm --prefix ui run typecheck
+
+test-ui:
+	npm --prefix ui run test:config
+	npm --prefix ui run test:browser
+
+test-ui-dev:
+	npm --prefix ui run test:config
+	npm --prefix ui run test:browser:dev
+
+deploy-dashboard: deploy-local-api deploy-local-logcollector deploy-local-ui
 
 # Local deployments
 deploy-local-deps:
@@ -56,7 +81,10 @@ deploy-local-api: deploy-local-deps
 deploy-local-logcollector: deploy-local-deps
 	docker compose -f docker/docker-compose.logcollector.yaml up -d
 
-deploy-local: deploy-local-deps deploy-local-runner deploy-local-api deploy-local-logcollector
+deploy-local-ui: deploy-local-api
+	docker compose -f docker/docker-compose.ui.yaml up -d --build
+
+deploy-local: deploy-local-deps deploy-local-runner deploy-local-api deploy-local-logcollector deploy-local-ui
 
 deploy-dev-server:
 	docker compose -f docker/docker-compose.dev-server.yaml pull
@@ -73,6 +101,7 @@ clean:
 	docker compose -f docker/docker-compose.runner.yaml down
 	docker compose -f docker/docker-compose.api.yaml down
 	docker compose -f docker/docker-compose.logcollector.yaml down
+	docker compose -f docker/docker-compose.ui.yaml down
 
 k8s:
 	kubectl apply -k kubernetes/kustomize/overlays/flowforge

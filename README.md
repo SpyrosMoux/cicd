@@ -1,6 +1,6 @@
 # FlowForge
 
-FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker containers. It provides a lightweight automation solution without a UI (for now) and can be deployed easily using Docker Compose or Kubernetes.
+FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker containers. A separately deployed, read-only dashboard shows recent pipeline runs. The platform can be deployed using Docker Compose or Kubernetes.
 
 ## How It Works
 
@@ -18,18 +18,22 @@ For full documentation, visit: [FlowForge Docs](https://docs.flowforge.spyrosmou
 - Can be deployed in Kubernetes.
 - Support for autoscaling in Kubernetes.
 - Lightweight and easy to set up with Docker Compose.
+- Standalone recent-runs dashboard with a production image and isolated browser validation.
 
 ## Installation
 
+For the standalone dashboard, local deployment, and development and
+validation commands, see the [dashboard guide](docs/dashboard.md).
+
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/flowforge.git
-   cd flowforge
+   git clone https://github.com/SpyrosMoux/cicd.git
+   cd cicd
    ```
-2. Modify the configuration to set up domains and necessary environment variables.
+2. Configure the backend's `.env.docker` using the [setup guide](docs/setup.mdx).
 3. Start the platform using Docker Compose:
    ```sh
-   docker-compose up -d
+   make deploy-local
    ```
 4. Set up webhooks on your repositories to send events to your FlowForge API URL.
 

@@ -1,0 +1,16 @@
+services:
+  ui:
+    container_name: ui
+    image: ghcr.io/spyrosmoux/cicd/ui:${TAG:-latest}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.ui
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-http://api:8080}
+    ports:
+      - '127.0.0.1:${UI_PORT:-3000}:8080'
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/']
+      interval: 2s
+      timeout: 3s
+      retries: 20
