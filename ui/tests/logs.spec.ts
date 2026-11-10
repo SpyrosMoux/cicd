@@ -216,5 +216,6 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   expect(mutations).toEqual([]);
   expect(errors).toEqual([]);
   expect((await request.post(`/api/logs/${encodeURIComponent(id)}`, { data: {} })).status()).toBe(403);
-  expect((await request.get('/api/logs/ws/other-run')).status()).toBe(404);
+  expect((await request.get('/api/logs/ws/other-run')).status()).toBe(400);
+  expect((await request.post('/api/logs/ws/other-run', { data: {} })).status()).toBe(403);
 });

@@ -10,7 +10,7 @@
     "build": "npm run typecheck && vite build",
     "test:config": "node --test tests/local-development.test.mjs",
     "test:browser": "node tests/run.mjs",
-    "test:browser:dev": "node tests/run.mjs --dev --grep 'newest first|empty installation|API outage|saved logs preserve repeated'"
+    "test:browser:dev": "node tests/run.mjs --dev --grep 'newest first|empty installation|API outage|saved logs preserve repeated|live logs follow broker'"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0",
