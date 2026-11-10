@@ -1,19 +1,7 @@
-import { expect, type APIRequestContext } from '@playwright/test';
-import { addRun, database, publishLog, resetRuns, service, test } from './fixtures';
+import { expect } from '@playwright/test';
+import { addRun, database, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
 
 test.beforeEach(resetRuns);
-
-async function waitForSavedRecords(request: APIRequestContext, runId: string, count: number) {
-  const url = `${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/${encodeURIComponent(runId)}`;
-  await expect.poll(async () => (await (await request.get(url)).json()).data?.length ?? 0).toBe(count);
-}
-
-async function waitForCollector(request: APIRequestContext) {
-  await expect.poll(async () => {
-    try { return (await request.get(`${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/health`)).status(); }
-    catch { return 0; }
-  }).toBe(200);
-}
 
 test('saved logs preserve repeated records, metadata and stable presentation of unordered reads', async ({ page, request }) => {
   await addRun('saved-history', 'Completed', 1794225600);
@@ -197,6 +185,7 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
   await expect(logs.getByRole('listitem')).toHaveCount(3);
   await expect(logs.getByRole('listitem').first()).toHaveText('Timestamp unavailable INFO Legacy saved output.');
+  await expect(logs).toContainText('Live connection open.');
   await expect(logs.getByText(message, { exact: true })).toBeVisible();
   await expect(logs.getByRole('listitem').nth(1)).toContainText('INFO');
   await expect(logs.getByRole('listitem').last()).toHaveText('2026-11-09T12:00:01Z INFO Debug output.');
@@ -216,5 +205,6 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   expect(mutations).toEqual([]);
   expect(errors).toEqual([]);
   expect((await request.post(`/api/logs/${encodeURIComponent(id)}`, { data: {} })).status()).toBe(403);
-  expect((await request.get('/api/logs/ws/other-run')).status()).toBe(404);
+  expect((await request.get('/api/logs/ws/other-run')).status()).toBe(400);
+  expect((await request.post('/api/logs/ws/other-run', { data: {} })).status()).toBe(403);
 });

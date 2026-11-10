@@ -4,8 +4,8 @@ The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
 stored runs across repositories, newest-triggered first (equal timestamps use
 ascending run ID). Refresh reads the existing API; the frontend stores no history.
 The dashboard is read-only. Open a run to inspect its lifecycle and recorded
-failure alongside saved logs, including completed-run history. Live following
-and viewer search/download controls follow in subsequent tickets under spec #112.
+failure alongside saved logs, including completed-run history, and follows newly
+persisted output. Viewer search/download controls follow in ticket #118.
 
 ## Investigating a run
 
@@ -64,9 +64,39 @@ A failed refresh retains the previous output with an explicit stale warning;
 even a previously empty snapshot remains stale rather than claiming a fresh empty
 result. Successful retry clears that warning. Run details and their API refresh
 continue independently during a log-collector outage. Navigating away aborts the
-old log request, clears its output, and prevents late results from crossing runs.
-Saved logs load on selection and manual refresh; automatic live reconciliation is
-the next slice.
+old log request, closes its subscription, cancels retries, clears its output, and
+prevents late results from crossing runs.
+
+## Following live output
+
+The browser opens the collector's existing text-only WebSocket for the selected
+run. Frames are update signals, never appended as unidentified records. Opening
+the connection and receiving a frame each request a saved-record reconciliation.
+A signal during a pending read queues another read after it completes, covering
+initial-load/subscription overlap. Records are reconciled by persisted ID; equal
+message text in distinct records remains separate. Existing row nodes are retained
+when their content is unchanged.
+
+Saved records are also read five seconds after each successful reconciliation,
+including for completed, failed, and canceled runs. A terminal status change
+requests an immediate reconciliation, but never ends periodic reads: asynchronously
+ingested late logs and missed live notifications remain discoverable. The UI
+recovers persisted records only; it cannot recover events the backend never saved.
+
+The connection reports connecting, open, reconnecting, and unavailable states.
+After three failed connection attempts it reports unavailable while continuing
+to retry. Connection attempts time out after ten seconds; reconnects use delays
+of 1, 2, 4, 8, 16, then at most 30 seconds, reset after a successful connection.
+Failed saved-record reads retry with the same bounded backoff, independently of
+the WebSocket. A connected socket does not clear a failed-read warning; only a
+successful saved-record read does. Run API failures remain separate from both.
+
+**Auto-scroll** is a keyboard-accessible checkbox, enabled initially. Turning it
+off pauses viewport movement while ingestion continues. Existing text selection,
+keyboard focus, and the visible reading position survive background updates,
+including late records inserted earlier in the deterministic order. Turning it
+back on immediately follows the loaded tail. Its setting survives background
+run/status refreshes and navigation between runs.
 
 ## Filtering and monitoring
 
@@ -133,8 +163,15 @@ Set `LOGCOLLECTOR_UPSTREAM` the same way for a different log collector origin.
 The browser requests `GET /api/runs` from the UI origin. Nginx forwards that read
 to `GET /app/cicd/api/runs` on the API. It resolves container DNS at request time.
 The browser also reads `GET /api/logs/<encoded-run-id>`, forwarded to
-`GET /app/cicd/logs/<encoded-run-id>` on the log collector. Only these read
-routes are proxied; other API routes and mutations are rejected. Browser configuration contains no GitHub,
+`GET /app/cicd/logs/<encoded-run-id>` on the log collector. Live connections use
+`/api/logs/ws/<encoded-run-id>`, forwarded to `/app/cicd/logs/ws/<encoded-run-id>`
+with HTTP/1.1 Upgrade/Connection headers and the browser's original Host/Origin.
+This preserves the collector's existing same-origin check without a CORS change.
+Both Nginx and Vite route HTTP and WebSocket traffic to `LOGCOLLECTOR_UPSTREAM`.
+Any gateway in front of the UI must forward WebSocket upgrades and preserve the
+browser Host. Nginx closes an idle live stream after 60 seconds because the
+existing protocol has no heartbeat; the UI reconnects and reconciles automatically.
+Only these read routes are proxied; other API routes and mutations are rejected. Browser configuration contains no GitHub,
 database, or RabbitMQ credentials, and no CORS changes are required.
 
 After pulling an update, run `make deploy-local-ui` again to rebuild the UI.
@@ -216,8 +253,12 @@ message identity, deterministic UI ordering and stored severity, historical rows
 active and completed empty states, loading, stale/initial failures and retry,
 collector and UI restarts, delayed responses across selections, escaped run IDs,
 literal Unicode/markup output, long lines, keyboard scrolling, and narrow layouts.
+Live-log journeys additionally cover real WebSocket frames from broker-published
+records, initial-load/subscription overlap, interrupted connections and catch-up,
+late terminal output, run-switch isolation, and keyboard auto-scroll control with
+stable reading position and text selection.
 
-`make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, and saved-log history journeys
+`make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, saved-log history, and broker-delivered live-log journeys
 through the actual Vite development server and the same disposable backend.
 
 To run a single journey: `npm --prefix ui run test:browser -- --grep 'newest first'`.
