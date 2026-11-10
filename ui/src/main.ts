@@ -120,18 +120,22 @@ function createRunTable() {
   return body;
 }
 
+function renderEmptyRuns() {
+  durations.clear();
+  renderedRows.clear();
+  const state = element('div', 'state');
+  const icon = element('div', 'state-icon', '◇');
+  icon.setAttribute('aria-hidden', 'true');
+  const noMatches = snapshot.length > 0;
+  state.append(icon, element('h2', '', noMatches ? 'No matching runs' : 'No runs yet'),
+    element('p', '', noMatches ? 'Choose different filters or clear them to see all runs.'
+      : 'Pipeline runs will appear here when your repositories send work to FlowForge.'));
+  content.replaceChildren(state);
+}
+
 function renderRuns(runs: Run[]) {
   if (runs.length === 0) {
-    durations.clear();
-    renderedRows.clear();
-    const state = element('div', 'state');
-    const icon = element('div', 'state-icon', '◇');
-    icon.setAttribute('aria-hidden', 'true');
-    const noMatches = snapshot.length > 0;
-    state.append(icon, element('h2', '', noMatches ? 'No matching runs' : 'No runs yet'),
-      element('p', '', noMatches ? 'Choose different filters or clear them to see all runs.'
-        : 'Pipeline runs will appear here when your repositories send work to FlowForge.'));
-    content.replaceChildren(state);
+    renderEmptyRuns();
     return;
   }
   const body = content.querySelector('tbody') ?? createRunTable();
