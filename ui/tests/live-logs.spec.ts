@@ -7,7 +7,7 @@ test('live logs follow broker-published records and retain identical messages on
   await addRun('live-output', 'Running', 1794225600);
   await publishLog('live-output', 'Saved before opening.');
   await waitForSavedRecords(request, 'live-output', 1);
-  const connected = page.waitForEvent('websocket');
+  const connected = page.waitForEvent('websocket', (socket) => new URL(socket.url()).pathname === '/api/logs/ws/live-output');
   await page.goto('/runs/live-output');
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
   await expect(logs).toContainText('Saved before opening.');
@@ -97,7 +97,7 @@ test('records persisted during initial history loading are reconciled after the 
     await route.fulfill({ response });
   });
   try {
-    const connected = page.waitForEvent('websocket');
+    const connected = page.waitForEvent('websocket', (socket) => new URL(socket.url()).pathname === '/api/logs/ws/overlap-output');
     await page.goto('/runs/overlap-output');
     await waiting;
     const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
@@ -220,7 +220,7 @@ test('switching runs closes the old live subscription and cancels its scheduled 
   page.on('websocket', (socket) => subscriptions.push(socket.url()));
   page.on('request', (request) => { if (request.url().includes('/api/logs/')) reads.push(request.url()); });
   await page.goto('/');
-  const connected = page.waitForEvent('websocket');
+  const connected = page.waitForEvent('websocket', (socket) => new URL(socket.url()).pathname === '/api/logs/ws/live-run-a');
   await page.getByRole('link', { name: 'Open run live-run-a', exact: true }).click();
   const socket = await connected;
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
