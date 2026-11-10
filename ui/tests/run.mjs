@@ -8,13 +8,13 @@ const development = process.argv.includes('--dev');
 const browserArgs = process.argv.slice(2).filter((arg) => arg !== '--dev');
 const project = `flowforge-browser-${process.pid}-${randomUUID().slice(0, 8)}`;
 // Keep the UI origin and Vite's API target stable across container restarts.
-const portProbes = [createServer(), createServer()];
+const portProbes = [createServer(), createServer(), createServer()];
 await Promise.all(portProbes.map((probe) =>
   new Promise((resolve, reject) => {
     probe.once('error', reject);
     probe.listen(0, '127.0.0.1', resolve);
   })));
-const [uiPort, apiPort] = portProbes.map((probe) => probe.address().port);
+const [uiPort, apiPort, logcollectorPort] = portProbes.map((probe) => probe.address().port);
 await Promise.all(portProbes.map((probe) => new Promise((resolve) => probe.close(resolve))));
 const env = {
   ...process.env,
@@ -22,12 +22,14 @@ const env = {
   TAG: project,
   UI_TEST_PORT: String(uiPort),
   API_TEST_PORT: String(apiPort),
+  LOGCOLLECTOR_TEST_PORT: String(logcollectorPort),
   POSTGRES_PASSWORD: randomUUID(),
   RABBITMQ_PASSWORD: randomUUID(),
   GH_WEBHOOK_SECRET: randomUUID(),
   GH_TOKEN: randomUUID(),
   // Deliberately override the default: the packaged journey proves deploy-time routing.
   API_UPSTREAM: 'http://fixture-api:8080', // NOSONAR: Plain HTTP is confined to this disposable Docker network; the fixture API has no TLS listener.
+  LOGCOLLECTOR_UPSTREAM: 'http://fixture-logs:8081', // NOSONAR: The fixture collector has no TLS listener on this disposable network.
 };
 const executable = process.env.COMPOSE_BIN || 'docker';
 const prefix = process.env.COMPOSE_BIN ? [] : ['compose'];
@@ -60,6 +62,7 @@ try {
   env.TEST_COMPOSE_ARGS = JSON.stringify(args);
   if (development) {
     process.env.API_UPSTREAM = `http://${compose(['port', 'api', '8080'], true)}`;
+    process.env.LOGCOLLECTOR_UPSTREAM = env.LOGCOLLECTOR_URL;
     process.env.UI_DEV_PORT = '0';
     const vite = await import('vite');
     devServer = await vite.createServer({ root: cwd, configFile: fileURLToPath(new URL('../vite.config.ts', import.meta.url)) });

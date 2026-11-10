@@ -9,6 +9,7 @@ test('the standalone UI configures with defaults and reuses existing backend ser
     'RABBITMQ_USER', 'RABBITMQ_PASSWORD', 'GH_TOKEN', 'GH_WEBHOOK_SECRET']) delete env[key];
   // Empty overrides must also use Compose's default values.
   env.API_UPSTREAM = '';
+  env.LOGCOLLECTOR_UPSTREAM = '';
   env.UI_PORT = '';
   env.TAG = '';
   const executable = env.COMPOSE_BIN || 'docker';
@@ -19,5 +20,7 @@ test('the standalone UI configures with defaults and reuses existing backend ser
   });
   assert.ifError(result.error);
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(Object.keys(JSON.parse(result.stdout).services), ['ui']);
+  const { services } = JSON.parse(result.stdout);
+  assert.deepEqual(Object.keys(services), ['ui']);
+  assert.equal(services.ui.environment.LOGCOLLECTOR_UPSTREAM, 'http://logcollector:8081');
 });

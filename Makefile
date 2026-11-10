@@ -52,7 +52,7 @@ build-all-docker: build-api-docker build-runner-docker build-logcollector-docker
 build-ui:
 	npm --prefix ui run build
 
-dev-ui: deploy-local-api
+dev-ui: deploy-local-api deploy-local-logcollector
 	npm --prefix ui run dev
 
 typecheck-ui:
@@ -81,7 +81,7 @@ deploy-local-api: deploy-local-deps
 deploy-local-logcollector: deploy-local-deps
 	docker compose -f docker/docker-compose.logcollector.yaml up -d
 
-deploy-local-ui: deploy-local-api
+deploy-local-ui: deploy-local-api deploy-local-logcollector
 	docker compose -f docker/docker-compose.ui.yaml up -d --build
 
 deploy-local: deploy-local-deps deploy-local-runner deploy-local-api deploy-local-logcollector deploy-local-ui

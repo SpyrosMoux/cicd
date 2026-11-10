@@ -1,6 +1,7 @@
 import { readRuns, formatTime, formatDuration, statuses, statusLabel, type Run } from './runs';
 import { element } from './dom';
 import { renderDetails, renderLookupState } from './details';
+import { SavedLogs } from './logs';
 import './style.css';
 
 const app = document.querySelector<HTMLElement>('#app')!;
@@ -28,6 +29,7 @@ app.innerHTML = `
     <section id="run-detail" aria-labelledby="page-title" hidden>
       <a class="back-link" href="/"><span aria-hidden="true">←</span> Back to runs</a>
       <div id="detail-content" class="panel"></div>
+      <section id="saved-logs" class="panel saved-logs" aria-labelledby="logs-heading" hidden></section>
     </section>
     <footer>FlowForge <span aria-hidden="true">/</span> Your pipelines, in view.</footer>
   </div>`;
@@ -43,6 +45,7 @@ const list = document.querySelector<HTMLElement>('#run-list')!;
 const detail = document.querySelector<HTMLElement>('#run-detail')!;
 const detailContent = document.querySelector<HTMLElement>('#detail-content')!;
 const title = document.querySelector<HTMLElement>('#page-title')!;
+const savedLogs = new SavedLogs(document.querySelector<HTMLElement>('#saved-logs')!);
 const durations = new Map<HTMLElement, Run>();
 const renderedRows = new Map<string, { signature: string; node: HTMLTableRowElement }>();
 let hasSnapshot = false;
@@ -93,8 +96,12 @@ function renderSelectedRun() {
     ? 'Build history across your repositories. Updates automatically.'
     : 'Identity, lifecycle and recorded failure. Updates automatically.';
   document.title = id === null ? 'FlowForge · Recent runs' : `FlowForge · Run ${id}`;
-  if (id === null) return;
+  if (id === null) {
+    savedLogs.select(null);
+    return;
+  }
   const run = snapshot.find((value) => value.id === id);
+  savedLogs.select(run ?? null);
   const signature = JSON.stringify([id, run, !run && hasSnapshot, !run && readFailed]);
   if (signature === detailSignature) return;
   detailSignature = signature;

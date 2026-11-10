@@ -4,7 +4,8 @@ The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
 stored runs across repositories, newest-triggered first (equal timestamps use
 ascending run ID). Refresh reads the existing API; the frontend stores no history.
 The dashboard is read-only. Open a run to inspect its lifecycle and recorded
-failure. The log viewer follows in subsequent tickets under spec #112.
+failure alongside saved logs, including completed-run history. Live following
+and viewer search/download controls follow in subsequent tickets under spec #112.
 
 ## Investigating a run
 
@@ -30,6 +31,42 @@ visible with an explicit stale warning; automatic retries and **Try again**
 provide recovery. Navigation uses the current URL when a response arrives, so a
 late response cannot select a previously viewed run. No new API endpoint or
 mutation operation is introduced.
+
+## Saved logs
+
+Opening a known run reads its persisted records from the log collector. Each
+record retains its ID, timestamp string, numeric severity (shown as INFO, WARN,
+ERROR or DEBUG), and literal message text. Equal messages in different records
+remain separate lines. The keyboard-focusable pane wraps long lines and contains
+scrolling within the page. Markup-like output and Unicode are displayed as text.
+
+The UI sorts each snapshot by the stored timestamp string ascending,
+then record ID ascending. The backend read contract stays unchanged and does not
+guarantee response ordering. This is a deterministic presentation order, including
+for older records; it does **not** reconstruct emission order. Timestamps are
+stored strings, may use different formats, and can repeat. The UUID tie-breaker
+is not a sequence or ingestion cursor. No schema, response envelope, record fields,
+or WebSocket message format changes are required. Empty reads retain the existing
+successful response with an empty array (the browser also accepts null data).
+The UI proxy preserves escaped IDs, subject to the existing collector's route
+constraints. IDs containing slashes cannot be read by that backend; a failed log
+read leaves the run details usable.
+
+The UI renders the numeric severity actually stored on each record, using
+INFO=0, WARN=1, ERROR=2, DEBUG=3. The existing collector's constant declaration
+stores every incoming severity as zero, so those records display INFO. The UI
+does not reconstruct missing severity information or change backend ingestion.
+
+Loading, no saved output, waiting for output on Pending/Running runs, and retrieval
+failure have distinct messages. **Refresh saved logs** reloads the snapshot and
+also retries failed reads. Requests time out after ten seconds and cannot overlap.
+A failed refresh retains the previous output with an explicit stale warning;
+even a previously empty snapshot remains stale rather than claiming a fresh empty
+result. Successful retry clears that warning. Run details and their API refresh
+continue independently during a log-collector outage. Navigating away aborts the
+old log request, clears its output, and prevents late results from crossing runs.
+Saved logs load on selection and manual refresh; automatic live reconciliation is
+the next slice.
 
 ## Filtering and monitoring
 
@@ -60,7 +97,7 @@ load shows **Unable to load runs**, never a successful empty result.
 
 The UI follows the backend's per-service Compose and Makefile pattern. Its
 `docker/docker-compose.ui.yaml` defines only the UI, joins the same default
-Compose network as the existing API, and reuses backend history.
+Compose network as the existing API and log collector, and reuses backend history.
 
 Use your existing backend `.env.docker` configuration. The UI requires no new
 environment file or credentials. From the repository root:
@@ -69,7 +106,8 @@ environment file or credentials. From the repository root:
 make deploy-local-ui
 ```
 
-This starts the API and its existing dependencies through `deploy-local-api`,
+This starts the API, log collector and their existing dependencies through the
+per-service targets,
 then builds and starts the UI. Open <http://127.0.0.1:3000>. `make deploy-local`
 now includes the UI alongside the API, runner, and log collector.
 `make deploy-dashboard` starts the API, log collector, and UI through those same
@@ -81,6 +119,7 @@ The UI has these overridable defaults:
 | Variable | Container default | Development server default |
 | --- | --- | --- |
 | `API_UPSTREAM` | `http://api:8080` | `http://127.0.0.1:8080` |
+| `LOGCOLLECTOR_UPSTREAM` | `http://logcollector:8081` | `http://127.0.0.1:8081` |
 | `UI_PORT` | `3000` | Not used |
 | `UI_DEV_PORT` | Not used | `5173` |
 | `TAG` | `latest` | Not used |
@@ -89,17 +128,20 @@ For example, `UI_PORT=3001 make deploy-local-ui` changes the container's localho
 port. For a different backend, set `API_UPSTREAM` to its reachable origin
 (scheme, hostname, and port, without a path or trailing slash). Nginx substitutes
 this at container startup; rebuilding the browser bundle is unnecessary.
+Set `LOGCOLLECTOR_UPSTREAM` the same way for a different log collector origin.
 
 The browser requests `GET /api/runs` from the UI origin. Nginx forwards that read
 to `GET /app/cicd/api/runs` on the API. It resolves container DNS at request time.
-Only this read route is proxied. Browser configuration contains no GitHub,
+The browser also reads `GET /api/logs/<encoded-run-id>`, forwarded to
+`GET /app/cicd/logs/<encoded-run-id>` on the log collector. Only these read
+routes are proxied; other API routes and mutations are rejected. Browser configuration contains no GitHub,
 database, or RabbitMQ credentials, and no CORS changes are required.
 
 After pulling an update, run `make deploy-local-ui` again to rebuild the UI.
 Stop just the UI with `docker compose -f docker/docker-compose.ui.yaml down`.
 Restarting or replacing it preserves backend history; the UI has no database or
 data volume. Its Compose healthcheck checks the static server, while the page
-shows API connection failures.
+shows API and log-collector connection failures independently.
 
 ## Development and image publication
 
@@ -112,9 +154,9 @@ make typecheck-ui
 make build-ui
 ```
 
-`make dev-ui` starts the existing local API dependencies before running Vite with
+`make dev-ui` starts the existing local API and log collector before running Vite with
 hot reload at <http://127.0.0.1:5173>. It can run alongside the container on port
-3000. Set `UI_DEV_PORT` or `API_UPSTREAM` to override its defaults. It fails
+3000. Set `UI_DEV_PORT`, `API_UPSTREAM`, or `LOGCOLLECTOR_UPSTREAM` to override its defaults. It fails
 clearly if the selected port is already occupied instead of choosing another.
 Both settings remain server-side; do not put secrets in `VITE_*` variables.
 Production uses a multi-stage image with fixed base-image versions and an npm
@@ -153,7 +195,7 @@ random localhost ports and a unique Compose project. It seeds deterministic
 records in that database, exercises real HTTP reads through Nginx, and removes
 only its own stack and volumes afterward. No live GitHub event, runner execution,
 mocked API response, or production test endpoint is used. Its shared fixture
-publisher sends logs through RabbitMQ to the real collector for later slices.
+publisher sends logs through RabbitMQ to the real collector.
 Journeys cover combined filters, no matches/reset, new repositories and runs,
 status changes through the existing API, automatic outage recovery, and bounded
 refresh during a slow real request. Browser clock control advances refresh time;
@@ -169,7 +211,13 @@ recovery with retained stale details, and selection changes during a delayed rea
 response. Desktop/narrow-screen and keyboard checks include metadata and failure
 text containing Unicode, markup-like content, and long lines.
 
-`make test-ui-dev` runs the ordering, loading/empty, and outage/recovery journeys
+Saved-log journeys additionally cover collector-persisted RabbitMQ events, repeated
+message identity, deterministic UI ordering and stored severity, historical rows,
+active and completed empty states, loading, stale/initial failures and retry,
+collector and UI restarts, delayed responses across selections, escaped run IDs,
+literal Unicode/markup output, long lines, keyboard scrolling, and narrow layouts.
+
+`make test-ui-dev` runs the run ordering, loading/empty, outage/recovery, and saved-log history journeys
 through the actual Vite development server and the same disposable backend.
 
 To run a single journey: `npm --prefix ui run test:browser -- --grep 'newest first'`.
