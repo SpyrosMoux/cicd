@@ -1,0 +1,29 @@
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" always;
+
+    location = /api/runs {
+        limit_except GET { deny all; }
+        set $api_upstream "${API_UPSTREAM}";
+        proxy_pass $api_upstream/app/cicd/api/runs;
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 8s;
+    }
+
+    location /api/ { return 404; }
+
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+    }
+
+    location / {
+        expires -1;
+        try_files $uri $uri/ /index.html;
+    }
+}

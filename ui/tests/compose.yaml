@@ -1,0 +1,84 @@
+services:
+  api:
+    container_name: !reset null
+    image: flowforge-test-api:${COMPOSE_PROJECT_NAME}
+    env_file: !reset []
+    environment:
+      API_PORT: '8080'
+      DB_HOST: api-db
+      DB_PORT: '5432'
+      DB_USER: cicd
+      DB_PASS: ${POSTGRES_PASSWORD}
+      DB_NAME: cicd
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: '5672'
+      RABBITMQ_USER: cicd
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      GH_WEBHOOK_SECRET: ${GH_WEBHOOK_SECRET}
+      GH_TOKEN: ${GH_TOKEN}
+    ports: !override ['127.0.0.1:${API_TEST_PORT:?Set API_TEST_PORT}:8080']
+    depends_on:
+      api-db: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/app/cicd/api/health']
+      interval: 2s
+      timeout: 3s
+      retries: 40
+    networks:
+      default:
+        aliases: [fixture-api]
+  api-db:
+    container_name: !reset null
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: cicd
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: cicd
+    ports: !override ['127.0.0.1::5432']
+    healthcheck:
+      test: [CMD, pg_isready, -h, '127.0.0.1', -U, cicd, -d, cicd]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+  rabbitmq:
+    container_name: !reset null
+    image: rabbitmq:3.13.7-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: cicd
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports: !override ['127.0.0.1::5672']
+    healthcheck:
+      test: [CMD-SHELL, 'rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_port_connectivity']
+      interval: 3s
+      timeout: 5s
+      retries: 40
+  logcollector:
+    container_name: !reset null
+    image: flowforge-test-logcollector:${COMPOSE_PROJECT_NAME}
+    env_file: !reset []
+    environment:
+      LOGCOLLECTOR_PORT: '8081'
+      LOGCOLLECTOR_DB_HOST: api-db
+      LOGCOLLECTOR_DB_PORT: '5432'
+      LOGCOLLECTOR_DB_USER: cicd
+      LOGCOLLECTOR_DB_PASS: ${POSTGRES_PASSWORD}
+      LOGCOLLECTOR_DB_NAME: cicd
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: '5672'
+      RABBITMQ_USER: cicd
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    ports: !override ['127.0.0.1::8081']
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8081/app/cicd/logs/health']
+      interval: 2s
+      timeout: 3s
+      retries: 40
+  ui:
+    container_name: !reset null
+    image: flowforge-test-ui:${COMPOSE_PROJECT_NAME}
+    ports: !override ['127.0.0.1:${UI_TEST_PORT:?Set UI_TEST_PORT}:8080']
+    depends_on:
+      api: {condition: service_healthy}

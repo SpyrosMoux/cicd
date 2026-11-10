@@ -1,0 +1,115 @@
+# Recent-runs dashboard
+
+The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
+stored runs across repositories, newest-triggered first (equal timestamps use
+ascending run ID). Refresh reads the existing API; the frontend stores no history.
+This first slice is read-only. Filters, run details, and the log viewer follow in
+subsequent tickets under spec #112.
+
+## Local deployment
+
+The UI follows the backend's per-service Compose and Makefile pattern. Its
+`docker/docker-compose.ui.yaml` defines only the UI, joins the same default
+Compose network as the existing API, and reuses backend history.
+
+Use your existing backend `.env.docker` configuration. The UI requires no new
+environment file or credentials. From the repository root:
+
+```sh
+make deploy-local-ui
+```
+
+This starts the API and its existing dependencies through `deploy-local-api`,
+then builds and starts the UI. Open <http://127.0.0.1:3000>. `make deploy-local`
+now includes the UI alongside the API, runner, and log collector.
+`make deploy-dashboard` starts the API, log collector, and UI through those same
+per-service targets. `docker/docker-compose.dev-server.yaml` also includes the
+UI on its existing `cicd_net` network.
+
+The UI has these overridable defaults:
+
+| Variable | Container default | Development server default |
+| --- | --- | --- |
+| `API_UPSTREAM` | `http://api:8080` | `http://127.0.0.1:8080` |
+| `UI_PORT` | `3000` | Not used |
+| `UI_DEV_PORT` | Not used | `5173` |
+| `TAG` | `latest` | Not used |
+
+For example, `UI_PORT=3001 make deploy-local-ui` changes the container's localhost
+port. For a different backend, set `API_UPSTREAM` to its reachable origin
+(scheme, hostname, and port, without a path or trailing slash). Nginx substitutes
+this at container startup; rebuilding the browser bundle is unnecessary.
+
+The browser requests `GET /api/runs` from the UI origin. Nginx forwards that read
+to `GET /app/cicd/api/runs` on the API. It resolves container DNS at request time.
+Only this read route is proxied. Browser configuration contains no GitHub,
+database, or RabbitMQ credentials, and no CORS changes are required.
+
+After pulling an update, run `make deploy-local-ui` again to rebuild the UI.
+Stop just the UI with `docker compose -f docker/docker-compose.ui.yaml down`.
+Restarting or replacing it preserves backend history; the UI has no database or
+data volume. Its Compose healthcheck checks the static server, while the page
+shows API connection failures.
+
+## Development and image publication
+
+Node 22.12+ (Node 24 in the production build) and npm are required locally:
+
+```sh
+npm ci --ignore-scripts --prefix ui
+make dev-ui
+make typecheck-ui
+make build-ui
+```
+
+`make dev-ui` starts the existing local API dependencies before running Vite with
+hot reload at <http://127.0.0.1:5173>. It can run alongside the container on port
+3000. Set `UI_DEV_PORT` or `API_UPSTREAM` to override its defaults. It fails
+clearly if the selected port is already occupied instead of choosing another.
+Both settings remain server-side; do not put secrets in `VITE_*` variables.
+Production uses a multi-stage image with fixed base-image versions and an npm
+lockfile. The final Nginx image runs as UID 101 on container port 8080; Node and
+test dependencies are absent. Compose still publishes localhost port 3000.
+
+The existing registry/tag conventions also apply to the UI:
+
+```sh
+make build-ui-docker TAG=YOUR_VERSION PLATFORM=linux/amd64
+```
+
+This target builds **and pushes** `ghcr.io/spyrosmoux/cicd/ui:YOUR_VERSION`, like
+the existing backend targets. Use `PLATFORM=linux/arm64` for an ARM mini PC. A
+plain `docker build` as above builds locally without publishing. `build-all-docker`
+now includes the UI. For published UI images, set `TAG`, then run `docker compose
+-f docker/docker-compose.ui.yaml pull` followed by `up -d --no-build` with that
+same Compose file.
+
+## Isolated browser validation
+
+With Docker Engine and Compose v2.24.4+ available:
+
+```sh
+npm ci --ignore-scripts --prefix ui
+cd ui
+npx playwright install --with-deps chromium
+cd ..
+make test-ui
+```
+
+The harness combines the same per-service Compose files with a test-only
+override. It builds the production UI image and real API/log-collector images,
+starts disposable PostgreSQL/RabbitMQ with freshly generated credentials, and uses
+random localhost ports and a unique Compose project. It seeds deterministic
+records in that database, exercises real HTTP reads through Nginx, and removes
+only its own stack and volumes afterward. No live GitHub event, runner execution,
+mocked API response, or production test endpoint is used. Its shared fixture
+publisher sends logs through RabbitMQ to the real collector for later slices.
+
+`make test-ui-dev` runs the ordering, loading/empty, and outage/recovery journeys
+through the actual Vite development server and the same disposable backend.
+
+To run a single journey: `npm --prefix ui run test:browser -- --grep 'newest first'`.
+Set `COMPOSE_BIN` to a standalone Compose executable if `docker compose` is not
+on your PATH. Test traces/screenshots are under `ui/test-results/` on failure.
+Validation runs through the Make targets locally; there is no UI GitHub Actions
+workflow. Typechecking includes the browser harness.
