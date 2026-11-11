@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { addRun, database, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
+import { addRun, database, delaySavedLogResponse, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
 
 test.beforeEach(resetRuns);
 
@@ -54,6 +54,7 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
   try {
     await page.goto('/runs/waiting-output');
     await expect(logs).toContainText('Loading saved logs…');
+    await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeDisabled();
     await expect(page.getByRole('region', { name: 'Run details', exact: true }).getByText('Running', { exact: true })).toBeVisible();
     release();
     await expect(logs).toContainText('Waiting for output');
@@ -69,6 +70,9 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
   await expect(logs).toContainText('Active run already has output.');
   await page.goto('/runs/empty-history');
   await expect(logs).toContainText('No saved logs for this run.');
+  await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeEnabled();
+  await logs.getByRole('searchbox', { name: 'Search logs' }).fill('no output');
+  await expect(logs).not.toContainText('No saved log records match this search.');
   await expect(logs).not.toContainText('Waiting for output');
   service('stop', 'logcollector');
   try {
@@ -77,6 +81,7 @@ test('saved logs distinguish loading, active waiting, completed empty and unavai
     await expect(logs).not.toContainText('No saved logs for this run.');
     await page.reload();
     await expect(logs.getByRole('alert')).toContainText('log collector is unavailable');
+    await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeDisabled();
     await expect(page.getByRole('region', { name: 'Run details', exact: true }).getByText('empty-history', { exact: true })).toBeVisible();
     service('start', 'logcollector');
     await waitForCollector(request);
@@ -129,33 +134,19 @@ test('switching runs cancels ownership of a delayed saved-log response', async (
     await publishLog(id, `Output belongs to ${id}.`);
     await waitForSavedRecords(request, id, 1);
   }
-  let release!: () => void;
-  let received!: () => void;
-  let finished!: () => void;
-  const gate = new Promise<void>((resolve) => { release = resolve; });
-  const waiting = new Promise<void>((resolve) => { received = resolve; });
-  const completed = new Promise<void>((resolve) => { finished = resolve; });
-  let delayed = false;
-  await page.route('**/api/logs/log-run-a', async (route) => {
-    if (delayed) { await route.continue(); return; }
-    delayed = true;
-    const response = await route.fetch();
-    received();
-    await gate;
-    try { await route.fulfill({ response }); } finally { finished(); }
-  });
+  const delayed = await delaySavedLogResponse(page, 'log-run-a');
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
   try {
     await page.goto('/');
     await page.getByRole('link', { name: 'Open run log-run-a', exact: true }).click();
-    await waiting;
+    await delayed.received;
     await expect(logs).toContainText('Loading saved logs…');
     await page.goBack();
     await page.getByRole('link', { name: 'Open run log-run-b', exact: true }).click();
     await expect(logs).toContainText('Output belongs to log-run-b.');
     await expect(logs).not.toContainText('Output belongs to log-run-a.');
-    release();
-    await completed;
+    delayed.release();
+    await delayed.completed;
     await expect(logs.getByRole('listitem')).toHaveCount(1);
     await expect(logs).toContainText('Output belongs to log-run-b.');
     await page.goBack();
@@ -163,7 +154,7 @@ test('switching runs cancels ownership of a delayed saved-log response', async (
     await expect(logs).toContainText('Output belongs to log-run-a.');
     await expect(logs).not.toContainText('Output belongs to log-run-b.');
   } finally {
-    release();
+    delayed.release();
   }
 });
 
@@ -198,6 +189,10 @@ test('saved logs preserve legacy records and safe Unicode content through encode
   }
   const output = logs.getByRole('list', { name: 'Saved log records' });
   await logs.getByRole('button', { name: 'Refresh saved logs' }).focus();
+  await page.keyboard.press('Tab');
+  await expect(logs.getByRole('searchbox', { name: 'Search logs' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(logs.getByRole('button', { name: 'Download logs', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(output).toBeFocused();
   await page.keyboard.press('End');
