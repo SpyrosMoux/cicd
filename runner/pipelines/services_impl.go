@@ -179,6 +179,13 @@ func (svc *service) RunPipeline(ctx context.Context, pipeline Pipeline, runMetad
 
 	err := svc.PrepareRun(runMetadata)
 	if err != nil {
+		svc.logger.Log(logrus.ErrorLevel, "err=", err)
+		queue.PublishLog(ctx.Value("pipelineRunId").(string), dto.LogEntryDto{
+			RunId:     ctx.Value("pipelineRunId").(string),
+			Timestamp: time.Now().UTC().String(),
+			LogLevel:  "ERROR",
+			Message:   fmt.Sprintf("err=%v", err.Error()),
+		})
 		return err
 	}
 
