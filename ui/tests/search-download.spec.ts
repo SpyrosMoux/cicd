@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect } from '@playwright/test';
-import { addRun, database, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
+import { addRun, database, delaySavedLogResponse, publishLog, resetRuns, service, test, waitForCollector, waitForSavedRecords } from './fixtures';
 
 test.beforeEach(resetRuns);
 
@@ -84,28 +84,14 @@ test('log downloads stay with the selected run when an earlier snapshot arrives 
     await publishLog(id, `Output only for ${id}.`);
     await waitForSavedRecords(request, id, 1);
   }
-  let release!: () => void;
-  let received!: () => void;
-  let finished!: () => void;
-  const gate = new Promise<void>((resolve) => { release = resolve; });
-  const waiting = new Promise<void>((resolve) => { received = resolve; });
-  const completed = new Promise<void>((resolve) => { finished = resolve; });
-  let delayed = false;
-  await page.route('**/api/logs/export-a', async (route) => {
-    if (delayed) { await route.continue(); return; }
-    delayed = true;
-    const response = await route.fetch();
-    received();
-    await gate;
-    try { await route.fulfill({ response }); } finally { finished(); }
-  });
+  const delayed = await delaySavedLogResponse(page, 'export-a');
   const logs = page.getByRole('region', { name: 'Saved logs', exact: true });
   const downloadButton = logs.getByRole('button', { name: 'Download logs', exact: true });
   const search = logs.getByRole('searchbox', { name: 'Search logs' });
   try {
     await page.goto('/');
     await page.getByRole('link', { name: 'Open run export-a', exact: true }).click();
-    await waiting;
+    await delayed.received;
     await expect(downloadButton).toBeDisabled();
     await search.fill('only for export-a');
     await page.goBack();
@@ -113,8 +99,8 @@ test('log downloads stay with the selected run when an earlier snapshot arrives 
     await expect(search).toHaveValue('');
     await expect(logs.getByRole('listitem')).toHaveText(['2026-11-09T12:00:00Z INFO Output only for export-b.']);
     await search.fill('no matching lines');
-    release();
-    await completed;
+    delayed.release();
+    await delayed.completed;
     const downloading = page.waitForEvent('download');
     await downloadButton.click();
     const download = await downloading;
@@ -126,7 +112,7 @@ test('log downloads stay with the selected run when an earlier snapshot arrives 
     await expect(search).toHaveValue('no matching lines');
     await expect(logs.getByRole('listitem')).toHaveCount(0);
   } finally {
-    release();
+    delayed.release();
   }
 });
 

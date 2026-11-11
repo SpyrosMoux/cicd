@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import pg from 'pg';
 import amqp from 'amqplib';
-import { expect, test as base, type APIRequestContext } from '@playwright/test';
+import { expect, test as base, type APIRequestContext, type Page } from '@playwright/test';
 
 if (!process.env.PGPORT || !process.env.POSTGRES_PASSWORD || !process.env.TEST_COMPOSE_ARGS || !process.env.UI_URL) {
   throw new Error('Use npm run test:browser to create the isolated fixture stack first.');
@@ -31,6 +31,26 @@ export async function resetRuns() {
 export async function waitForSavedRecords(request: APIRequestContext, runId: string, count: number) {
   const url = `${process.env.LOGCOLLECTOR_URL}/app/cicd/logs/${encodeURIComponent(runId)}`;
   await expect.poll(async () => (await (await request.get(url)).json()).data?.length ?? 0).toBe(count);
+}
+
+// Delay only the first real saved-log response to exercise navigation before it arrives.
+export async function delaySavedLogResponse(page: Page, runId: string) {
+  let release!: () => void;
+  let markReceived!: () => void;
+  let markCompleted!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const received = new Promise<void>((resolve) => { markReceived = resolve; });
+  const completed = new Promise<void>((resolve) => { markCompleted = resolve; });
+  let delayed = false;
+  await page.route((url) => url.pathname === `/api/logs/${encodeURIComponent(runId)}`, async (route) => {
+    if (delayed) { await route.continue(); return; }
+    delayed = true;
+    const response = await route.fetch();
+    markReceived();
+    await gate;
+    try { await route.fulfill({ response }); } finally { markCompleted(); }
+  });
+  return { received, release, completed };
 }
 
 export async function waitForCollector(request: APIRequestContext) {
