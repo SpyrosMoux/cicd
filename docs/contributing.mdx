@@ -1,0 +1,116 @@
+---
+title: "Contributing to FlowForge"
+description: "Propose changes, set up your environment, validate behavior, and open a focused pull request."
+sidebarTitle: "Contributing"
+---
+
+FlowForge accepts bug fixes, features, tests, and documentation improvements.
+Start with the [documentation index](/introduction) and [glossary](/glossary).
+The [architecture overview](/architecture) explains the service boundaries;
+the [development guide](/development) covers local setup and troubleshooting.
+
+## Discussing work
+
+Use [GitHub Issues](https://github.com/SpyrosMoux/cicd/issues) for bugs, proposals,
+and implementation specs. For a bug, include reproduction steps, expected and
+actual behavior, the revision, deployment method, and relevant redacted logs.
+For a larger change, describe the problem, intended behavior, and acceptance
+criteria in an issue before implementing it. Small fixes can go straight to a PR.
+
+Category labels such as `bug`, `enhancement`, and `documentation` describe the
+work. Triage labels describe readiness: `needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, and `wontfix`. Keep existing category labels
+when changing readiness. Maintainers manage triage; contributors do not need
+label permissions to participate.
+
+## Getting started
+
+You need Git, Make, and Go matching [go.mod](https://github.com/SpyrosMoux/cicd/blob/main/go.mod) for backend development.
+Dashboard work also needs Node 22.12+ and npm. Docker Engine and Docker Compose
+are required for local services; browser integration tests need Compose 2.24.4+
+and Playwright Chromium.
+
+Fork the repository if you do not have write access, clone your fork, and add
+this repository as `upstream`. Create a focused branch from the latest `main`
+in your clone:
+
+```sh
+git switch main
+git pull --ff-only
+git switch -c docs/describe-your-change
+```
+
+Use a branch name that describes your change; the `docs/` prefix is an example.
+Follow the [local setup instructions](/development) for the services you
+need. Documentation-only changes do not require a running backend.
+
+## Making changes
+
+- Keep the API, runner, log collector, and dashboard as separate services, each
+  with its own entry point and image. Put shared contracts in `common/dto`.
+- Follow the existing handler/service/repository organization in the area you
+  change. Keep HTTP binding in handlers, behavior in services, and persistence in
+  repositories where that separation already exists.
+- Format changed Go files with `gofmt`. Follow the existing TypeScript style and
+  keep `ui/package-lock.json` in sync when changing dashboard dependencies.
+- Add regression coverage for changed behavior. Dashboard journeys use real
+  backend services through the existing isolated browser harness.
+- Keep local deployment consistent with the per-service Compose files and Make
+  targets. Preserve overridable defaults. Keep dashboard validation in local
+  Make targets; do not add a UI GitHub Actions workflow.
+- Update documentation when changing configuration, routes, queue payloads,
+  pipeline syntax, lifecycle behavior, or deployment requirements.
+
+Use the terms in the [glossary](/glossary). Keep the root `GLOSSARY.md` and site
+glossary synchronized when terms change; keep implementation details in the technical
+guides. Record a meaningful
+architectural decision in `docs/adr/` when a real trade-off needs lasting context.
+Do not invent decisions to explain code whose original rationale is unknown.
+
+Never commit environment files, tokens, database dumps, or unredacted private
+run output. The current runner can expose private clone credentials in its logs;
+inspect and redact logs before attaching them to an issue or PR.
+
+## Validating a change
+
+Choose checks that exercise the affected behavior. Run commands from the
+repository root unless stated otherwise:
+
+| Change | Checks |
+| --- | --- |
+| Go code | `gofmt` on changed files, `go test ./...`, `go vet ./...`, `make build-all` |
+| Dashboard code | `npm ci --ignore-scripts --prefix ui`, `make typecheck-ui`, `make build-ui`, `make test-ui` |
+| Vite proxy/development behavior | Dashboard checks plus `make test-ui-dev` |
+| Deployment/configuration | Render the affected Compose or Kustomize configuration and check the resulting routes, environment, and image settings |
+| Documentation only | Check local links, examples against source, Markdown fences, and `git diff --check` |
+
+Install the browser once before running the UI journeys:
+
+```sh
+cd ui
+npx playwright install --with-deps chromium
+cd ..
+```
+
+The browser harness creates and removes its own stack and volumes. It does not
+need real GitHub credentials or an operator's `.env.docker`. See the
+[dashboard testing guide](/dashboard#isolated-browser-validation) for a
+single-journey command and failure artifacts. These journeys cover the dashboard,
+API, and log collector; they do not exercise webhook-driven runner execution.
+
+The `build-*-docker` Make targets build **and push** images. Use `make build-all`
+for local Go binaries or plain `docker build` for a local image. Do not run a
+publication target as a routine validation check.
+
+## Opening a pull request
+
+Push your feature branch to your fork or the repository and open a PR against
+`main`. Follow the [PR template](https://github.com/SpyrosMoux/cicd/blob/main/.github/pull_request_template.md): explain the
+problem, resulting behavior, related issue, validation performed, and any
+compatibility or deployment impact. Include screenshots for visible UI changes
+and make failures or checks you could not run explicit.
+
+Keep unrelated cleanup out of the PR. Review your diff, address feedback, and
+update documentation and tests when the implementation changes. Report only
+checks you actually ran; a successful build alone does not prove a complete
+pipeline can execute.

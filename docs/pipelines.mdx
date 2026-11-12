@@ -1,0 +1,128 @@
+---
+title: "Pipeline reference"
+description: "Define triggers, jobs, steps, and variables using the current execution model."
+---
+
+Pipeline definitions live in the target repository's `.flowforge` directory.
+The API fetches the directory at the event's branch/ref and attempts to parse
+its entries as YAML. Keep that directory limited to pipeline files: invalid
+definitions are skipped, while an entry without a download URL or a fetch error
+can fail discovery.
+
+## Example
+
+For a repository named `my-app`, save this as `.flowforge/check.yaml`:
+
+```yaml
+triggers:
+  branch:
+    - main
+  pr:
+    - main
+
+variables:
+  GREETING: "Hello from FlowForge"
+
+jobs:
+  - name: inspect
+    steps:
+      - name: inspect-source
+        run: |
+          cd "$(SourcesDirectory)/my-app"
+          printf '%s\n' "${GREETING}"
+          git rev-parse --short HEAD
+
+  - name: summarize
+    needs:
+      - inspect
+    steps:
+      - name: write-summary
+        run: |
+          mkdir -p "$(ArtifactsDirectory)"
+          printf '%s\n' "Source inspection completed" > "$(ArtifactsDirectory)/summary.txt"
+```
+
+Replace `my-app` with your repository's name. The example uses shell tools
+available in the runner. Build tools beyond those in the runner image must be
+provided by your execution environment or invoked explicitly by your commands.
+The artifact directory is only workspace storage; FlowForge does not upload or
+retain its files after cleanup.
+
+## Trigger selection
+
+| Event | Definition fetched from | Match against |
+| --- | --- | --- |
+| Push | Event repository at the webhook ref | `triggers.branch` against the branch after removing `refs/heads/` |
+| Pull request | Head repository at the head branch | `triggers.pr` against the destination/base branch |
+
+Pull-request actions `opened`, `reopened`, and `synchronize` are processed;
+other actions are ignored. Each list entry matches an exact branch name, except
+the complete string `"*"`, which matches every branch. Patterns such as
+`feature/*` are not expanded. Missing or empty trigger lists match nothing.
+`none` is an ordinary branch name, not a special disable keyword; omit a list
+to avoid matching that event type.
+
+Each valid matching definition creates a separate pipeline run. The API fetches
+configuration from a branch, and the runner later clones/checks out a branch;
+execution is not pinned to the commit that sent the webhook. A branch can move
+between those operations. Tag/deletion events have no dedicated handling, so
+do not rely on them as supported trigger modes.
+
+For pull requests, queued clone metadata currently uses the event repository,
+although configuration was read from the head repository. Fork pull requests
+can therefore select different source/configuration repositories or fail checkout.
+There is no explicit fork-isolation or merge-ref execution model.
+
+## Jobs, steps, and validation
+
+- A pipeline must have at least one job.
+- Every job needs a nonempty `name` and at least one step.
+- Every step needs a nonempty `name` and nonempty `run` script.
+- Every name in `needs` must identify a job in the same definition.
+
+Validation does not enforce unique names, reject unknown YAML fields, check
+dependency cycles, or calculate dependency order. Jobs run in the order written
+in `jobs`, regardless of `needs`; steps run in the order written in `steps`.
+A failing step stops the remaining steps and jobs. There are no parallel jobs,
+conditional steps, matrices, configured retries, or per-step timeout fields.
+
+Steps use `sh -c`, not Bash. Each step starts a new shell, so `cd` and exported
+variables do not carry into the next step. Files in the shared workspace do.
+The initial working directory is `/flowforge/_work`, not the cloned repository;
+change into the source directory in any step that requires it.
+
+The runner itself is containerized. Steps execute inside that container rather
+than in individually provisioned job containers. If a command calls Docker,
+the Compose deployment routes it to the mounted host daemon. A bind mount in
+such a command refers to the daemon host's filesystem; a runner-container path
+is not automatically available there.
+
+## Variables and workspace
+
+| Placeholder | Value |
+| --- | --- |
+| `$(SourcesDirectory)` | `/flowforge/_work/s`; cloned repository is a child named after the repository |
+| `$(WorkDirectory)` | `/flowforge/_work` |
+| `$(ArtifactsDirectory)` | `/flowforge/_work/a` |
+| `${NAME}` | Text from `variables.NAME`, substituted before shell execution |
+
+Predefined placeholders are replaced in step scripts before user variables.
+User substitution is literal string replacement, not a shell environment or an
+expression language. Unmatched `${NAME}` text is left for the shell. Avoid
+recursive/interdependent values: map iteration does not define an expansion
+order. Values are not automatically escaped or masked as secrets.
+
+The runner prepares a shared process workspace at startup and removes `_work`
+at the end of a run, including on execution errors. Cleanup errors are logged
+and do not change an otherwise successful return into a failed run. No artifact
+publication, cache service, or per-run workspace isolation is implemented.
+
+`RUN_ONCE=true` fits the one-run process lifecycle. The long-lived consumer mode
+does not recreate the removed workspace between runs. Reusing the same container
+also leaves `/flowforge` present, which can fail startup directory creation.
+Recreate a local runner container for another one-shot run; see
+[development](/development#running-a-pipeline).
+
+See [`runner/pipelines/types.go`](https://github.com/SpyrosMoux/cicd/blob/main/runner/pipelines/types.go) for the parser
+and [`runner/pipelines/services_impl.go`](https://github.com/SpyrosMoux/cicd/blob/main/runner/pipelines/services_impl.go)
+for execution and substitution.
