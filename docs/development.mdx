@@ -1,0 +1,169 @@
+---
+title: "Local development"
+description: "Configure services, develop locally, validate changes, and diagnose failures."
+---
+
+Run commands from the repository root unless a step says otherwise. Use a
+development checkout and local data; the runner executes repository shell commands
+with the privileges described in the [architecture guide](/architecture#trust-boundaries).
+
+## Tools
+
+- Go: match `go.mod` (Go 1.23.0 language version, Go 1.23.7 toolchain directive).
+- Git and Make for repository commands and build targets.
+- Docker Engine and Compose; browser tests require Compose 2.24.4+.
+- Node 22.12+ and npm for dashboard development. The UI image builds with Node 24.
+
+## Configure the local backend
+
+The per-service Compose files pass the root `.env.docker` to Go containers.
+Go's environment loader requires nonempty values and exits when a requested
+value is missing. It also attempts to load `.env` in its working directory.
+
+Create `.env.docker` with these local settings, replacing the password placeholder:
+
+```dotenv
+API_PORT=8080
+DB_HOST=api-db
+DB_PORT=5432
+DB_USER=cicd_user
+DB_PASS=YOUR_LOCAL_DB_PASSWORD
+DB_NAME=cicd
+GH_WEBHOOK_SECRET=unused-for-dashboard
+GH_TOKEN=unused-for-dashboard
+
+LOGCOLLECTOR_PORT=8081
+LOGCOLLECTOR_DB_HOST=api-db
+LOGCOLLECTOR_DB_PORT=5432
+LOGCOLLECTOR_DB_USER=cicd_user
+LOGCOLLECTOR_DB_PASS=YOUR_LOCAL_DB_PASSWORD
+LOGCOLLECTOR_DB_NAME=cicd
+
+API_BASE_URL=http://api:8080/app/cicd/api
+RUN_ONCE=true
+RABBITMQ_HOST=rabbitmq
+RABBITMQ_PORT=5672
+RABBITMQ_USER=guest
+RABBITMQ_PASSWORD=guest
+```
+
+The placeholder GitHub settings let the dashboard backend start without making
+GitHub calls. For actual webhooks, replace them with your configured webhook
+secret and an appropriate GitHub token.
+
+The dependency Compose file reads PostgreSQL settings from shell variables or
+the root `.env`, **not** from the services' `env_file`. Create a root `.env`:
+
+```dotenv
+POSTGRES_USER=cicd_user
+POSTGRES_PASSWORD=YOUR_LOCAL_DB_PASSWORD
+POSTGRES_DB=cicd
+```
+
+Use the same chosen password in both files. Both files are ignored by Git.
+Database initialization values apply to a new PostgreSQL data directory;
+changing an environment value does not change an existing database password.
+RabbitMQ's local dependency image uses its development `guest` account; changing
+client variables alone does not provision a different broker user.
+
+Inside Compose, PostgreSQL is `api-db:5432`; from the host it is
+`127.0.0.1:5433`. Do not use the host port for container-to-container traffic.
+
+## Start the dashboard stack
+
+```sh
+make deploy-local-deps
+docker compose -f docker/docker-compose.deps.yaml ps
+```
+
+Wait for PostgreSQL and RabbitMQ to accept connections before starting Go services;
+the basic per-service Compose files do not wait for dependency health.
+
+```sh
+make deploy-dashboard
+```
+
+This starts dependencies, API, collector, and UI, without a runner. Open
+[the dashboard](http://127.0.0.1:3000). `make deploy-local-ui` uses the same
+dependencies. `make deploy-local` additionally starts the runner.
+
+Backend targets use Compose `up -d` and can reuse an existing image. After
+editing backend code, rebuild the affected service explicitly:
+
+```sh
+docker compose -f docker/docker-compose.api.yaml up -d --build api
+docker compose -f docker/docker-compose.logcollector.yaml up -d --build logcollector
+```
+
+The UI target already uses `--build`. `make build-all` builds local Go binaries
+under `build/`; it does not replace running containers.
+
+## Dashboard hot reload
+
+```sh
+npm ci --ignore-scripts --prefix ui
+make dev-ui
+```
+
+Vite runs at [localhost:5173](http://127.0.0.1:5173), starts the existing backend
+targets, and proxies reads to the host-published API and collector. It can run
+alongside the production UI on port 3000. `UI_DEV_PORT`, `API_UPSTREAM`, and
+`LOGCOLLECTOR_UPSTREAM` override defaults. Upstreams are origins without a path
+or trailing slash. Keep credentials out of browser-exposed `VITE_*` variables.
+
+See the [dashboard guide](/dashboard) for production proxy configuration,
+live connections, log semantics, and the full browser validation procedure.
+The [contribution guide](/contributing#validating-a-change) lists checks by
+change type. The isolated browser harness generates its own credentials and
+does not require these local environment files.
+
+## Running a pipeline
+
+Add a [pipeline definition](/pipelines) to the repository you want to build,
+configure real GitHub settings in `.env.docker`, and recreate the API after an
+environment change. Configure GitHub to send push/pull-request events as JSON to
+`/app/cicd/api/gh/webhook` on your reachable API origin, using the same secret.
+The API's webhook secret is required at startup. The older
+[webhook walkthrough](/essentials/setup-webhook) shows the GitHub settings UI.
+
+Start a source-built one-shot runner when dependencies are ready:
+
+```sh
+docker compose -f docker/docker-compose.runner.yaml up -d --build --force-recreate runner
+```
+
+Trigger a matching event, then inspect its run and logs. Recreate the runner
+for another attempt: its current directory lifecycle does not support reliable
+workspace reuse. Do not simply restart the exited container.
+
+`make proxy-webhook` requires the external `smee` command and uses the channel
+specified by `SMEE_URL` in the Makefile. Review that channel before use; it is
+not necessary when GitHub can already reach your development API.
+
+## Troubleshooting
+
+```sh
+docker compose -f docker/docker-compose.api.yaml logs --tail 100 api
+docker compose -f docker/docker-compose.runner.yaml logs --tail 100 runner
+docker compose -f docker/docker-compose.logcollector.yaml logs --tail 100 logcollector
+docker compose -f docker/docker-compose.deps.yaml logs --tail 100
+curl --fail http://127.0.0.1:8080/app/cicd/api/health
+curl --fail http://127.0.0.1:8081/app/cicd/logs/health
+```
+
+| Symptom | Check |
+| --- | --- |
+| Service exits on startup | Missing environment values, credentials, dependency readiness, and service logs |
+| Dashboard loads but run history fails | API health, UI upstream origin, and API database connection |
+| Run details work but saved logs fail | Collector health, collector database settings, and log upstream |
+| Run stays Pending | Trigger/discovery logs, publication errors, RabbitMQ `jobs` depth, and runner availability |
+| Run stays Running | Runner output and failed lifecycle requests; see [failure boundaries](/execution-flow#failure-and-recovery-boundaries) |
+| Live output disconnects | Proxy WebSocket upgrades; saved snapshots continue polling independently |
+| Backend edit has no effect | Rebuild the affected backend image; `up -d` alone can reuse it |
+| Runner fails on another run | Recreate the one-shot container; inspect workspace preparation/cleanup errors |
+
+Health routes report liveness, not full dependency health. Redact tokens before
+sharing logs, especially private clone commands and stored run output.
+The local dependency file has no explicit named data volumes or backup policy;
+do not treat its data as a durable installation. Avoid `make clean` as a routine
+stop command: it removes build output and tears down every local service.

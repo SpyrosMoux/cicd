@@ -1,0 +1,68 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "FlowForge",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "setup",
+          "kubernetes-setup"
+        ]
+      },
+      {
+        "group": "Essentials",
+        "pages": [
+          "essentials/setup-webhook",
+          "pipelines",
+          "dashboard"
+        ]
+      },
+      {
+        "group": "Architecture",
+        "pages": [
+          "architecture",
+          "data-model",
+          "execution-flow",
+          "glossary"
+        ]
+      },
+      {
+        "group": "Contributing",
+        "pages": [
+          "contributing",
+          "development"
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "https://github.com/spyrosmoux/cicd/issues"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/spyrosmoux/cicd"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/spyrosmoux/cicd"
+    }
+  }
+}

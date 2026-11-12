@@ -1,4 +1,8 @@
-# Recent-runs dashboard
+---
+title: "Recent-runs dashboard"
+description: "Deploy the read-only dashboard and inspect run history, saved output, and live logs."
+sidebarTitle: "Dashboard"
+---
 
 The dashboard is a separate TypeScript/Vite module and Nginx container. It shows
 stored runs across repositories, newest-triggered first (equal timestamps use
@@ -171,7 +175,7 @@ make deploy-local-ui
 
 This starts the API, log collector and their existing dependencies through the
 per-service targets,
-then builds and starts the UI. Open <http://127.0.0.1:3000>. `make deploy-local`
+then builds and starts the UI. Open [http://127.0.0.1:3000](http://127.0.0.1:3000). `make deploy-local`
 now includes the UI alongside the API, runner, and log collector.
 `make deploy-dashboard` starts the API, log collector, and UI through those same
 per-service targets. `docker/docker-compose.dev-server.yaml` also includes the
@@ -199,7 +203,8 @@ The browser also reads `GET /api/logs/<encoded-run-id>`, forwarded to
 `GET /app/cicd/logs/<encoded-run-id>` on the log collector. Live connections use
 `/api/logs/ws/<encoded-run-id>`, forwarded to `/app/cicd/logs/ws/<encoded-run-id>`
 with HTTP/1.1 Upgrade/Connection headers and the browser's original Host/Origin.
-This preserves the collector's existing same-origin check without a CORS change.
+The current collector accepts any WebSocket origin; forwarding these headers
+does not provide authentication or access control.
 Both Nginx and Vite route HTTP and WebSocket traffic to `LOGCOLLECTOR_UPSTREAM`.
 Any gateway in front of the UI must forward WebSocket upgrades and preserve the
 browser Host. Nginx closes an idle live stream after 60 seconds because the
@@ -225,7 +230,7 @@ make build-ui
 ```
 
 `make dev-ui` starts the existing local API and log collector before running Vite with
-hot reload at <http://127.0.0.1:5173>. It can run alongside the container on port
+hot reload at [http://127.0.0.1:5173](http://127.0.0.1:5173). It can run alongside the container on port
 3000. Set `UI_DEV_PORT`, `API_UPSTREAM`, or `LOGCOLLECTOR_UPSTREAM` to override its defaults. It fails
 clearly if the selected port is already occupied instead of choosing another.
 Both settings remain server-side; do not put secrets in `VITE_*` variables.

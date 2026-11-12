@@ -1,6 +1,17 @@
 # FlowForge
 
-FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker containers. A separately deployed, read-only dashboard shows recent pipeline runs. The platform can be deployed using Docker Compose or Kubernetes.
+FlowForge is a self-hostable CI/CD platform with containerized runners that execute pipeline shell commands. A separately deployed, read-only dashboard shows recent pipeline runs. The platform includes Docker Compose and Kubernetes deployment configurations.
+
+## Documentation
+
+Start with the [Mintlify documentation](https://docs.flowforge.spyrosmoux.com/), or jump to:
+
+- [Contributing](CONTRIBUTING.md) and [local development](https://docs.flowforge.spyrosmoux.com/development)
+- [Architecture and service boundaries](https://docs.flowforge.spyrosmoux.com/architecture)
+- [Data models and contracts](https://docs.flowforge.spyrosmoux.com/data-model)
+- [From webhook to visible output](https://docs.flowforge.spyrosmoux.com/execution-flow)
+- [Pipeline syntax and execution rules](https://docs.flowforge.spyrosmoux.com/pipelines)
+- [Domain glossary](GLOSSARY.md)
 
 ## How It Works
 
@@ -23,14 +34,14 @@ For full documentation, visit: [FlowForge Docs](https://docs.flowforge.spyrosmou
 ## Installation
 
 For the standalone dashboard, local deployment, and development and
-validation commands, see the [dashboard guide](docs/dashboard.md).
+validation commands, see the [dashboard guide](https://docs.flowforge.spyrosmoux.com/dashboard).
 
 1. Clone the repository:
    ```sh
    git clone https://github.com/SpyrosMoux/cicd.git
    cd cicd
    ```
-2. Configure the backend's `.env.docker` using the [setup guide](docs/setup.mdx).
+2. Configure the local environment and start dependencies using the [development guide](https://docs.flowforge.spyrosmoux.com/development#configure-the-local-backend).
 3. Start the platform using Docker Compose:
    ```sh
    make deploy-local
@@ -46,13 +57,14 @@ validation commands, see the [dashboard guide](docs/dashboard.md).
 
 ## Requirements
 
-- Docker (No additional dependencies required)
+- Docker Engine and Docker Compose for container deployments; Make for the commands above.
+- Go and Node/npm for source development; see the [contributing guide](https://docs.flowforge.spyrosmoux.com/contributing#getting-started).
 
 ## Contributing
 
-We welcome contributions! You can:
-- Report issues in the repository.
-- Open pull requests with improvements and new features.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, coding conventions, validation,
+and the issue/PR process. Bug reports and proposals belong in
+[GitHub Issues](https://github.com/SpyrosMoux/cicd/issues).
 
 ## License
 

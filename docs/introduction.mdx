@@ -5,13 +5,28 @@ import SnippetDockerCompose from '/snippets/snippet-docker-compose.mdx';
 
 # Welcome to FlowForge
 
-FlowForge is a self-hostable CI/CD platform that runs pipelines using Docker containers. It is designed to be lightweight, easy to deploy, and integrates seamlessly with your repositories.
+FlowForge is a self-hostable CI/CD platform with containerized runners that execute pipeline shell commands. A separate, read-only dashboard shows recorded runs and output.
+
+<CardGroup cols={2}>
+  <Card title="Understand the architecture" icon="diagram-project" href="/architecture">
+    Explore the services, data models, and journey from webhook to visible output.
+  </Card>
+  <Card title="Write a pipeline" icon="list-check" href="/pipelines">
+    Configure triggers, jobs, steps, and variables.
+  </Card>
+  <Card title="Use the dashboard" icon="desktop" href="/dashboard">
+    Inspect run history, follow saved logs, search output, and download snapshots.
+  </Card>
+  <Card title="Contribute to FlowForge" icon="code-pull-request" href="/contributing">
+    Set up local development, validate changes, and open a pull request.
+  </Card>
+</CardGroup>
 
 ## Key Features
 
 - 🚀 **Self-hostable**: Run it on your own infrastructure.
 - 🐳 **Docker-based**: Pipelines execute inside Docker containers.
-- ☁️ **Kubernetes Support**: Deploy in Kubernetes with future autoscaling capabilities.
+- ☁️ **Kubernetes Support**: Kustomize manifests include KEDA runner scaling; see the architecture guide for deployment limits.
 - 🔗 **Webhook-driven**: Automate builds with repository webhooks.
 
 ## Getting Started
@@ -30,7 +45,7 @@ Run it with the following command:
 docker compose up -d
 ```
 
-    Check out the detailed instructions [here](/setup)
+See the [installation guide](/setup), or use the [local development guide](/development) for a source checkout.
 
 ### Configuring Webhooks
 
