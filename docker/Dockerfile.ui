@@ -11,7 +11,10 @@ RUN npm run build
 FROM nginxinc/nginx-unprivileged@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
 ENV API_UPSTREAM=http://api:8080
 ENV LOGCOLLECTOR_UPSTREAM=http://logcollector:8081
-ENV NGINX_ENVSUBST_FILTER=^(API_UPSTREAM|LOGCOLLECTOR_UPSTREAM)$
+# Read the runtime DNS server(s) from /etc/resolv.conf at container startup.
+# Docker provides 127.0.0.11; Kubernetes provides the CoreDNS ClusterIP.
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+ENV NGINX_ENVSUBST_FILTER=^(API_UPSTREAM|LOGCOLLECTOR_UPSTREAM|NGINX_LOCAL_RESOLVERS)$
 COPY ui/nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /ui/dist /usr/share/nginx/html
 USER 101:101

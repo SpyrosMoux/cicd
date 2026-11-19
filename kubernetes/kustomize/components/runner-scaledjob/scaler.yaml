@@ -21,13 +21,13 @@ spec:
       spec:
         containers:
           - name: runner
-            image: ghcr.io/spyrosmoux/cicd/runner:latest
+            image: ghcr.io/spyrosmoux/cicd/runner:v0.3.0
             envFrom:
               - configMapRef:
                   name: env-vars
                   optional: false
               - secretRef:
-                  name: secret-vars
+                  name: common-secret-vars
                   optional: false
         restartPolicy: OnFailure
   minReplicaCount: 1

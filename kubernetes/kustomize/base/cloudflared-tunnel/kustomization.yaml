@@ -1,0 +1,13 @@
+kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+
+resources:
+  - deployment.yaml
+
+secretGenerator:
+  - name: cloudflared-token
+    envs:
+      - .env.cloudflared.k8s
+
+generatorOptions:
+  disableNameSuffixHash: true

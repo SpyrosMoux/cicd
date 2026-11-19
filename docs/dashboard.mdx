@@ -198,7 +198,10 @@ this at container startup; rebuilding the browser bundle is unnecessary.
 Set `LOGCOLLECTOR_UPSTREAM` the same way for a different log collector origin.
 
 The browser requests `GET /api/runs` from the UI origin. Nginx forwards that read
-to `GET /app/cicd/api/runs` on the API. It resolves container DNS at request time.
+to `GET /app/cicd/api/runs` on the API. It resolves the configured upstream at
+request time using the DNS servers read from the container's `/etc/resolv.conf` at
+startup, so the same image works with Docker's embedded DNS and with Kubernetes
+CoreDNS. No environment-specific resolver setting is needed.
 The browser also reads `GET /api/logs/<encoded-run-id>`, forwarded to
 `GET /app/cicd/logs/<encoded-run-id>` on the log collector. Live connections use
 `/api/logs/ws/<encoded-run-id>`, forwarded to `/app/cicd/logs/ws/<encoded-run-id>`

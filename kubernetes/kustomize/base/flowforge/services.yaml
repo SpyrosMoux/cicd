@@ -50,3 +50,27 @@ spec:
     - protocol: TCP
       port: 8081
       targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logcollector-db
+spec:
+  selector:
+    app: logcollector-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: db-port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+spec:
+  selector:
+    app: ui
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: http

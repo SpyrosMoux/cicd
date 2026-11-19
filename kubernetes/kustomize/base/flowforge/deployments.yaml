@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/spyrosmoux/cicd/api:v0.1.0
+          image: ghcr.io/spyrosmoux/cicd/api:v0.3.0
           imagePullPolicy: Always
           ports:
             - name: http
@@ -46,7 +46,10 @@ spec:
                 name: env-vars
                 optional: false
             - secretRef:
-                name: secret-vars
+                name: api-secret-vars
+                optional: false
+            - secretRef:
+                name: common-secret-vars
                 optional: false
       restartPolicy: Always
 ---
@@ -83,7 +86,7 @@ spec:
                 name: env-vars
                 optional: false
             - secretRef:
-                name: secret-vars
+                name: common-secret-vars
                 optional: false
       restartPolicy: Always
 ---
@@ -117,7 +120,7 @@ spec:
                 name: env-vars
                 optional: false
             - secretRef:
-                name: secret-vars
+                name: api-secret-vars
                 optional: false
       restartPolicy: Always
 ---
@@ -140,7 +143,7 @@ spec:
     spec:
       containers:
         - name: logcollector
-          image: ghcr.io/spyrosmoux/cicd/logcollector:latest
+          image: ghcr.io/spyrosmoux/cicd/logcollector:v0.3.0
           imagePullPolicy: Always
           ports:
             - name: http
@@ -169,6 +172,92 @@ spec:
                 name: env-vars
                 optional: false
             - secretRef:
-                name: secret-vars
+                name: logcollector-secret-vars
+                optional: false
+            - secretRef:
+                name: common-secret-vars
+                optional: false
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logcollector-db
+  labels:
+    app: logcollector-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: logcollector-db
+  template:
+    metadata:
+      name: logcollector-db
+      labels:
+        app: logcollector-db
+    spec:
+      containers:
+        - name: logcollector-db
+          image: postgres:17
+          imagePullPolicy: Always
+          ports:
+            - name: db-port
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: env-vars
+                optional: false
+            - secretRef:
+                name: logcollector-secret-vars
+                optional: false
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  labels:
+    app: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      name: ui
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: ghcr.io/spyrosmoux/cicd/ui:v0.3.1
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          # startupProbe:
+          #   httpGet:
+          #     port: http
+          #     path: /
+          #   successThreshold: 1
+          #   failureThreshold: 3
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          #   timeoutSeconds: 20
+          # readinessProbe:
+          #   httpGet:
+          #     port: http
+          #     path: /
+          #   successThreshold: 1
+          #   failureThreshold: 3
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 10
+          #   timeoutSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: ui-env-vars
                 optional: false
       restartPolicy: Always
